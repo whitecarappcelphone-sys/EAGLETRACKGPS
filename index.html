@@ -651,19 +651,31 @@ html, body {
     border-bottom: 2px solid #ff0000;
 }
 .gps-placa {
-    background: #121212 !important;
     color: #ff0000 !important;
-    border: 1px solid #ff0000 !important;
-    border-radius: 6px !important;
-    padding: 4px 8px !important;
     font-size: 12px !important;
     font-weight: bold !important;
+}
+.gps-etiqueta-mapa {
+    min-width: 78px;
+    padding: 5px 8px 4px;
+    border: 1px solid #ff0000;
+    border-radius: 7px;
+    background: rgba(18, 18, 18, 0.96);
+    box-shadow: 0 0 8px rgba(255, 0, 0, 0.45), 0 3px 8px rgba(0, 0, 0, 0.72);
+    text-align: center;
+}
+.gps-etiqueta-mapa .gps-placa {
+    padding: 0 2px 3px !important;
+    border: none !important;
+    background: transparent !important;
 }
 .gps-estado-movimiento {
     color: #ffffff !important;
     font-size: 11px !important;
     font-weight: bold !important;
-    margin-top: 4px !important;
+    margin-top: 1px !important;
+    padding-top: 3px;
+    border-top: 1px solid rgba(255, 0, 0, 0.28);
     text-align: center !important;
     text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
 }
@@ -1035,13 +1047,21 @@ html, body {
     border-bottom: 1px solid rgba(255, 0, 0, 0.4);
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.72);
     backdrop-filter: blur(8px);
+    max-height: 46vh;
+    overflow-y: auto;
+    overscroll-behavior: contain;
 }
 
 .recorridos-cabecera {
+    position: sticky;
+    top: 0;
+    z-index: 2;
     display: flex;
     align-items: center;
     justify-content: space-between;
     gap: 8px;
+    padding-bottom: 4px;
+    background: rgba(10, 10, 10, 0.98);
 }
 
 .recorridos-titulo {
@@ -1052,12 +1072,14 @@ html, body {
     font-size: 15px;
     font-weight: bold;
     letter-spacing: 0.8px;
+    min-width: 0;
 }
 
 .recorridos-acciones {
     display: flex;
     align-items: center;
     gap: 7px;
+    flex: 0 0 auto;
 }
 
 .recorridos-buscar,
@@ -1084,18 +1106,17 @@ html, body {
     display: flex;
     align-items: center;
     gap: 8px;
+    flex-wrap: wrap;
     margin-top: 8px;
-    overflow-x: auto;
-    padding-bottom: 2px;
-    scrollbar-width: thin;
-    scrollbar-color: #ff0000 #111;
+    overflow: visible;
 }
 
 .recorridos-grupo {
     display: inline-flex;
     align-items: center;
     gap: 5px;
-    flex: 0 0 auto;
+    flex: 1 1 245px;
+    min-width: 0;
 }
 
 .recorridos-grupo label {
@@ -1107,7 +1128,8 @@ html, body {
 .recorridos-grupo select,
 .recorridos-grupo input {
     height: 30px;
-    min-width: 142px;
+    width: 100%;
+    min-width: 0;
     padding: 4px 7px;
     border: 1px solid rgba(255, 0, 0, 0.38);
     border-radius: 6px;
@@ -1274,11 +1296,27 @@ html, body {
 
 @media (max-width: 600px) {
     #control-recorridos { top: 363px; right: 10px; }
-    .recorridos-titulo { font-size: 12px; }
-    .recorridos-buscar { padding: 7px 9px; font-size: 10px; }
-    .recorridos-controles { gap: 6px; }
+    .recorridos-panel-superior {
+        max-height: 48vh;
+        padding-left: 9px;
+        padding-right: 9px;
+    }
+    .recorridos-titulo { font-size: 11px; letter-spacing: 0.3px; }
+    .recorridos-titulo span { white-space: normal; line-height: 1.05; }
+    .recorridos-buscar { padding: 7px 8px; font-size: 9px; }
+    .recorridos-cerrar { width: 31px; height: 31px; }
+    .recorridos-controles {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+    .recorridos-grupo {
+        display: grid;
+        grid-template-columns: 62px minmax(0, 1fr);
+        width: 100%;
+    }
     .recorridos-grupo select,
-    .recorridos-grupo input { min-width: 136px; font-size: 9.5px; }
+    .recorridos-grupo input { width: 100%; min-width: 0; font-size: 10px; }
     .recorridos-leyenda { display: none; }
     .recorridos-barra-estado { font-size: 9px; }
 }
@@ -1862,16 +1900,6 @@ html, body {
             const dispositivos = await dispositivosResponse.json();
             let posicionEncontrada = false;
 
-            if (!reglasAlertasWebConsultadas) {
-                reglasAlertasWebConsultadas = true;
-                actualizarReglasWebRegistradas()
-                    .then(() => cargarAlertasPersistentesMapa())
-                    .catch(error => {
-                        reglasAlertasWebConsultadas = false;
-                        console.warn('No se pudieron cargar las reglas Web:', error);
-                    });
-            }
-
             for (const dispositivo of dispositivos) {
                 const positionId = dispositivo.positionId;
                 if (!positionId) continue;
@@ -1891,8 +1919,19 @@ html, body {
             if (!posicionEncontrada) {
                 const textoCarga = document.getElementById('map-loading-texto');
                 if (textoCarga) textoCarga.textContent = 'Esperando señal del vehículo';
-            } else if (reglasAlertasWebConsultadas && !panelAlertasInicialCargado && !alertasMapaCerradas) {
-                cargarAlertasPersistentesMapa();
+            } else {
+                if (!reglasAlertasWebConsultadas) {
+                    try {
+                        await actualizarReglasWebRegistradas();
+                    } catch (error) {
+                        reglasAlertasWebConsultadas = false;
+                        console.warn('No se pudieron cargar las reglas Web:', error);
+                    }
+                }
+
+                if (reglasAlertasWebConsultadas && !panelAlertasInicialCargado && !alertasMapaCerradas) {
+                    await cargarAlertasPersistentesMapa();
+                }
             }
         } catch (error) {
             if (resultado) resultado.innerText = 'ERROR: ' + error;
@@ -2362,7 +2401,7 @@ html, body {
 
         // 4. Crear o mover el VEHÍCULO
         const tooltipHTML = `
-            <div>
+            <div class="gps-etiqueta-mapa">
                 <div class="gps-placa">${placaVehiculo}</div>
                 <div class="gps-estado-movimiento">
                     <span class="gps-punto-movimiento" style="color:${colorMovimiento} !important;">●</span>
@@ -3750,7 +3789,7 @@ html, body {
         const velocidad = posicion.speed !== undefined ? (posicion.speed * 1.852).toFixed(1) : '0.0';
         const fecha = new Date(posicion.deviceTime || posicion.serverTime || Date.now()).toLocaleString('es-ES');
         const estado = !ignition ? 'APAGADO' : motion ? 'EN MOVIMIENTO' : 'DETENIDO';
-        const direccion = posicion.address ? escaparHTML(posicion.address) : 'Dirección no disponible';
+        const direccion = posicion.address ? escaparHTML(posicion.address) : 'Consultando dirección...';
 
         return `
             <div class="recorrido-popup-titulo"><i class="fas fa-map-pin"></i> Punto ${indice} de ${total}</div>
@@ -3759,12 +3798,42 @@ html, body {
             <div class="recorrido-popup-fila"><strong>Estado:</strong> ${estado}</div>
             <div class="recorrido-popup-fila"><strong>Velocidad:</strong> ${velocidad} km/h</div>
             <div class="recorrido-popup-fila"><strong>Coordenadas:</strong> ${Number(posicion.latitude).toFixed(5)}, ${Number(posicion.longitude).toFixed(5)}</div>
-            <div class="recorrido-popup-direccion"><i class="fas fa-map-marker-alt"></i> ${direccion}</div>
+            <div class="recorrido-popup-direccion"><i class="fas fa-map-marker-alt"></i> <span class="recorrido-direccion-texto">${direccion}</span></div>
         `;
     }
 
+    async function resolverDireccionPuntoRecorrido(marcador, posicion) {
+        const elementoPopup = marcador.getPopup()?.getElement();
+        const textoDireccion = elementoPopup?.querySelector('.recorrido-direccion-texto');
+        if (!textoDireccion) return;
+
+        if (posicion.address) {
+            textoDireccion.textContent = posicion.address;
+            return;
+        }
+
+        textoDireccion.textContent = 'Consultando dirección...';
+        const lat = Number(posicion.latitude);
+        const lng = Number(posicion.longitude);
+        const clave = `${lat.toFixed(5)},${lng.toFixed(5)}`;
+
+        if (!cacheDireccionesAlertas.has(clave)) {
+            cacheDireccionesAlertas.set(
+                clave,
+                obtenerNombreLugar(lat, lng).catch(() => 'Ubicación desconocida')
+            );
+        }
+
+        const direccion = await cacheDireccionesAlertas.get(clave);
+        posicion.address = direccion;
+
+        const popupActual = marcador.getPopup()?.getElement();
+        const textoActual = popupActual?.querySelector('.recorrido-direccion-texto');
+        if (textoActual) textoActual.textContent = direccion || `${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+    }
+
     function renderizarRecorridoModal(posicionesOriginales) {
-        const maximo = 800;
+        const maximo = window.innerWidth <= 600 ? 300 : 800;
         let posiciones = posicionesOriginales;
         if (posiciones.length > maximo) {
             const paso = (posiciones.length - 1) / (maximo - 1);
@@ -3807,13 +3876,15 @@ html, body {
                 });
             }
 
-            L.marker([lat, lng], { icon: icono, zIndexOffset: zIndex })
+            const marcador = L.marker([lat, lng], { icon: icono, zIndexOffset: zIndex })
                 .bindPopup(construirPopupRecorrido(posicion, indice + 1, posiciones.length), {
                     maxWidth: 260,
                     minWidth: 220,
                     className: 'popup-recorrido'
-                })
-                .addTo(capaPuntosRecorrido);
+                });
+
+            marcador.on('popupopen', () => resolverDireccionPuntoRecorrido(marcador, posicion));
+            marcador.addTo(capaPuntosRecorrido);
         });
 
         if (coordenadas.length > 1) {
