@@ -1,0 +1,2819 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eagle Track GPS - Pro</title>
+    
+    <!-- LIBRERÍAS EXTERNAS AL PRINCIPIO -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.js"></script>
+
+<style>
+/* ================================
+   ESTILOS GENERALES Y RESET
+   ================================ */
+* {
+    box-sizing: border-box;
+}
+
+html, body {
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    overflow: hidden !important;
+    font-family: Arial, sans-serif;
+    background: #060505;
+    color: #111;
+}
+
+/* ================================
+   VIDEO INTRO
+   ================================ */
+#intro-video {
+    position: fixed;
+    top: 42%;
+    left: 50%;
+    width: 100%;
+    height: 100%;
+    transform: translate(-50%, -50%);
+    background: #060505;
+    border: 3px solid #ff0000;
+    box-shadow: 0 0 4px #ff0000, 0 0 8px rgba(255, 0, 0, 0.5);
+    border-radius: 25px;
+    z-index: 999999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+#intro-video video {
+    width: 100%;
+    height: 90%;
+    object-fit: cover;
+    border-radius: 20px;
+}
+
+@keyframes salirHaciaArriba {
+    from { transform: translate(-50%, -50%); opacity: 1; }
+    to { transform: translate(-50%, -150%); opacity: 0; }
+}
+
+#intro-video.saliendo {
+    animation: salirHaciaArriba 0.8s ease-in-out forwards;
+}
+
+/* ================================
+   PANTALLA DE LOGIN
+   ================================ */
+#pantalla-login {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100%;
+    background: url('https://i.imgur.com/YX3ICXJ.gif') center center / cover no-repeat;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 9999;
+}
+
+#login-box {
+    width: 82%;
+    max-width: 350px;
+    padding: 15px 28px 28px 28px;
+    background: rgba(255, 255, 255, 0.10);
+    border: 2px solid #ff0000;
+    border-radius: 18px;
+    box-shadow: 0 0 6px #ff0000, 0 0 15px rgba(255, 0, 0, 0.8), 0 0 30px rgba(255, 0, 0, 0.5);
+    text-align: center;
+    backdrop-filter: blur(5px);
+}
+
+#login-box h2 {
+    margin: 0 0 30px 0;
+    color: #FF0000;
+    font-size: 23px;
+}
+
+#login-box input, #login-box select {
+    width: 100%;
+    height: 48px;
+    padding: 0 15px;
+    margin: 8px 0;
+    border: none;
+    border-radius: 10px;
+    outline: none;
+    font-size: 14px;
+    font-family: inherit;
+    background: #ffffff;
+    color: #111;
+}
+
+#login-box select {
+    appearance: none;
+    -webkit-appearance: none;
+    background: #ffffff url('data:image/svg+xml;utf8,<svg fill="black" height="24" viewBox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M7 10l5 5 5-5z"/><path d="M0 0h24v24H0z" fill="none"/></svg>') no-repeat right 10px center;
+    cursor: pointer;
+}
+
+#login-box input:focus, #login-box select:focus { 
+    border: 2px solid #ff0000; 
+}
+
+#login-box button {
+    width: 100%;
+    height: 48px;
+    margin-top: 18px;
+    border: none;
+    border-radius: 10px;
+    background: #060505;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+#login-box button:hover { opacity: 0.9; }
+
+/* ================================
+   PANTALLA MAPA
+   ================================ */
+#pantalla-mapa {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background: #060505;
+    overflow: hidden !important;
+    z-index: 1000;
+}
+
+#mapa2 {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    border: none;
+    background: #060505;
+    z-index: 1; 
+}
+
+#mapa-webgl {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: none;
+    width: 100%;
+    height: 100%;
+    background: #060505;
+}
+
+#mapa-webgl.modo-conduccion::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    pointer-events: none;
+    box-shadow: inset 0 -90px 90px rgba(0, 0, 0, 0.35), inset 0 60px 80px rgba(120, 180, 220, 0.08);
+}
+
+.marcador-webgl-vehiculo {
+    width: 78px;
+    height: 78px;
+    background: url('https://i.imgur.com/2Q5Mv5j.png') center / contain no-repeat;
+    filter: drop-shadow(0 5px 7px rgba(0, 0, 0, 0.85));
+}
+
+#map-loading {
+    position: absolute;
+    inset: 0;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 13px;
+    background: #060505;
+    color: #fff;
+    pointer-events: none;
+    transition: opacity 0.35s ease, visibility 0.35s ease;
+}
+
+#map-loading.oculto {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.map-loading-radar {
+    position: relative;
+    width: 64px;
+    height: 64px;
+    border: 2px solid rgba(255, 0, 0, 0.35);
+    border-radius: 50%;
+}
+
+.map-loading-radar::before,
+.map-loading-radar::after {
+    content: '';
+    position: absolute;
+    inset: 8px;
+    border: 2px solid #ff0000;
+    border-radius: 50%;
+    animation: pulsoCargaMapa 1.35s ease-out infinite;
+}
+
+.map-loading-radar::after {
+    inset: 20px;
+    background: #ff0000;
+    animation: puntoCargaMapa 0.9s ease-in-out infinite alternate;
+}
+
+.map-loading-texto {
+    color: #ff0000;
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 1.4px;
+    text-transform: uppercase;
+}
+
+@keyframes pulsoCargaMapa {
+    from { transform: scale(0.45); opacity: 1; }
+    to { transform: scale(1.25); opacity: 0; }
+}
+
+@keyframes puntoCargaMapa {
+    from { transform: scale(0.75); box-shadow: 0 0 4px #ff0000; }
+    to { transform: scale(1.1); box-shadow: 0 0 18px #ff0000; }
+}
+
+/* ================================
+   HUD CONTENEDOR SUPERIOR
+   ================================ */
+#hud-container {
+    position: absolute;
+    bottom: 45px; 
+    left: 50%;
+    transform: translateX(-50%);
+    width: 94%;
+    max-width: 450px;
+    z-index: 999999;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    pointer-events: none;
+}
+
+#hud-container > * {
+    pointer-events: auto;
+}
+
+/* 1. TARJETA CABECERA */
+#tarjeta-gps {
+    width: 100%;
+    background: rgba(18, 18, 18, 0.85);
+    border: 1px solid rgba(255, 0, 0, 0.35);
+    border-radius: 16px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6), 0 0 8px rgba(255, 0, 0, 0.2);
+    overflow: visible; 
+}
+
+.gps-tarjeta-cabecera {
+    padding: 6px 15px; 
+    background: rgba(11, 11, 11, 0.65);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    border-radius: 16px; 
+    border: 1px solid rgba(255, 0, 0, 0.35); 
+}
+
+.gps-vehiculo-img {
+    width: 170px;
+    height: auto;
+    max-height: 90px; 
+    object-fit: contain;
+    background: transparent;
+    border: none;
+    padding: 0;
+    box-shadow: none;
+    flex-shrink: 0;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
+    transform: scale(1.6); 
+    transform-origin: center left; 
+    margin-left: -50px;
+}
+
+.gps-vehiculo-info {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    text-align: right;
+    flex-grow: 1;
+}
+
+.gps-vehiculo {
+    color: #ff0000;
+    font-size: 20px; 
+    font-weight: bold;
+    line-height: 1.1;
+}
+
+.gps-vehiculo-marca {
+    color: #cccccc;
+    font-size: 13px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin: 2px 0; 
+}
+
+.gps-estado {
+    font-size: 11px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+}
+.gps-ok { color: #00ff66; text-shadow: 0 0 5px rgba(0, 255, 102, 0.6); }
+.gps-error { color: #ff0000; text-shadow: 0 0 5px rgba(255, 0, 0, 0.6); }
+
+/* 2. TARJETA UBICACIÓN */
+.ubicacion-destacada {
+    width: 100%;
+    min-height: 50px;
+    background: rgba(18, 18, 18, 0.90);
+    border-radius: 12px;
+    padding: 8px 12px;
+    border: 1px solid rgba(255, 0, 0, 0.25);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+/* 3. SENSORES Y BOTONES DE CONTROL (FILA INFERIOR) */
+#sensores-flotantes {
+    display: flex;
+    flex-direction: row;
+    gap: 8px; 
+    width: 100%;
+}
+
+#velocidad-flotante, #ignicion-flotante {
+    flex: 1;
+    display: flex;
+}
+
+.velocidad-destacada, 
+.ignicion-destacada {
+    width: 100%;
+    background: rgba(18, 18, 18, 0.90);
+    border-radius: 12px;
+    padding: 10px 6px;
+    text-align: center;
+    border: 1px solid rgba(255, 0, 0, 0.25);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+/* BOTONES EXTRA: MOTOR Y MAPA */
+#controles-extra-flotantes {
+    width: 50px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.btn-extra {
+    flex: 1;
+    background: rgba(18, 18, 18, 0.90);
+    border: 1px solid rgba(255, 0, 0, 0.4);
+    border-radius: 12px;
+    color: #ff0000;
+    font-size: 18px;
+    cursor: pointer;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.btn-extra:hover {
+    background: rgba(255, 0, 0, 0.2);
+    border-color: #ff0000;
+}
+.btn-extra i.fa-key {
+    color: #ffffff !important;
+    font-size: 20px;
+}
+
+/* ================================
+   CONTROLES DEL MAPA (LATERAL IZQUIERDO UNIFICADO)
+   ================================ */
+#controles-mapa {
+    position: absolute;
+    top: 15px;
+    left: 15px;
+    z-index: 10000;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    pointer-events: none;
+}
+
+#pantalla-mapa #resultado { display: none; }
+
+/* Alertas Web recientes sobre el mapa. */
+#alertas-mapa-container {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    z-index: 100001;
+    width: min(68vw, 270px);
+    max-height: 170px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding-right: 3px;
+    pointer-events: none;
+    scrollbar-width: thin;
+    scrollbar-color: #ff0000 rgba(0, 0, 0, 0.35);
+}
+
+#alertas-mapa-container::-webkit-scrollbar { width: 4px; }
+#alertas-mapa-container::-webkit-scrollbar-thumb { background: #ff0000; border-radius: 6px; }
+
+.alerta-mapa-popup {
+    pointer-events: auto;
+    position: relative;
+    flex: 0 0 auto;
+    padding: 8px 10px;
+    border: 1px solid #ff0000;
+    border-left: 3px solid #ff0000;
+    border-radius: 8px;
+    background: rgba(10, 8, 8, 0.95);
+    color: #ffffff;
+    box-shadow: 0 0 9px rgba(255, 0, 0, 0.42), 0 4px 13px rgba(0, 0, 0, 0.68);
+    backdrop-filter: blur(7px);
+    animation: alertaMapaEntrada 0.38s ease-out both;
+}
+
+.alerta-mapa-popup.saliendo {
+    animation: alertaMapaSalida 0.55s ease-in forwards;
+}
+
+.alerta-mapa-cabecera {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    margin-bottom: 3px;
+    padding-right: 18px;
+}
+
+.alerta-mapa-titulo {
+    color: #ff0000;
+    font-size: 10px;
+    font-weight: bold;
+    text-transform: uppercase;
+    padding-right: 18px;
+}
+
+.alerta-mapa-hora {
+    color: #aaaaaa;
+    font-size: 8px;
+    white-space: nowrap;
+}
+
+.alerta-mapa-mensaje {
+    color: #ffffff;
+    font-size: 9.5px;
+    line-height: 1.3;
+}
+
+.alerta-mapa-cerrar {
+    position: absolute;
+    top: 5px;
+    right: 6px;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: bold;
+    line-height: 20px;
+    cursor: pointer;
+    opacity: 0.78;
+}
+
+.alerta-mapa-cerrar:hover {
+    color: #ff0000;
+    opacity: 1;
+}
+
+@keyframes alertaMapaEntrada {
+    from { opacity: 0; transform: translateX(45px) scale(0.96); }
+    to { opacity: 1; transform: translateX(0) scale(1); }
+}
+
+@keyframes alertaMapaSalida {
+    from { opacity: 1; transform: translateX(0); max-height: 100px; }
+    to { opacity: 0; transform: translateX(55px); max-height: 0; padding-top: 0; padding-bottom: 0; margin: 0; }
+}
+
+/* Estilos visuales para las nuevas capas de mapa. */
+.leaflet-tile.capa-google-oscura {
+    filter: invert(1) hue-rotate(180deg) brightness(0.78) contrast(1.18) saturate(0.72);
+}
+
+.leaflet-tile.capa-relieve-base {
+    filter: saturate(1.14) contrast(1.08) brightness(0.96);
+}
+
+.leaflet-tile.capa-relieve-sombras {
+    mix-blend-mode: multiply;
+    filter: contrast(1.3) brightness(0.88);
+}
+
+/* ================================
+   POPUP Y MARCADORES GPS 
+   ================================ */
+.gps-popup .leaflet-popup-content-wrapper {
+    background: rgba(18, 18, 18, 0.65) !important;
+    color: #ffffff !important;
+    border: 2px solid #ff0000 !important;
+    border-radius: 16px !important;
+    box-shadow: 0 0 6px #ff0000, 0 0 15px rgba(255, 0, 0, 0.8) !important;
+}
+.gps-popup .leaflet-popup-tip {
+    background: #121212 !important;
+    border-right: 2px solid #ff0000;
+    border-bottom: 2px solid #ff0000;
+}
+.gps-placa {
+    background: #121212 !important;
+    color: #ff0000 !important;
+    border: 1px solid #ff0000 !important;
+    border-radius: 6px !important;
+    padding: 4px 8px !important;
+    font-size: 12px !important;
+    font-weight: bold !important;
+}
+.gps-estado-movimiento {
+    color: #ffffff !important;
+    font-size: 11px !important;
+    font-weight: bold !important;
+    margin-top: 4px !important;
+    text-align: center !important;
+    text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+}
+.gps-placa-estado {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+}
+.gps-placa-estado::before { display: none !important; }
+
+/* ================================
+   MODALES UNIVERSALES
+   ================================ */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.85);
+    z-index: 1000000;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal-box {
+    background: #121212;
+    border: 2px solid #ff0000;
+    padding: 25px;
+    border-radius: 18px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 0 15px rgba(255, 0, 0, 0.5);
+    color: #fff;
+    text-align: center;
+}
+
+.modal-box h3 { color: #ff0000; margin-top: 0; margin-bottom: 20px; }
+.modal-box label { display: block; text-align: left; margin-bottom: 5px; font-size: 13px; color: #ccc; }
+.modal-box select, .modal-box input {
+    width: 100%; padding: 10px; margin-bottom: 15px;
+    background: #000; color: #fff; border: 1px solid #ff0000;
+    border-radius: 8px; outline: none;
+}
+.modal-box select:focus, .modal-box input:focus { box-shadow: 0 0 5px #ff0000; }
+.modal-box button.btn-descargar {
+    background: #ff0000; color: #fff; border: none; padding: 12px 20px;
+    border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold; margin-bottom: 10px;
+    transition: background 0.2s;
+}
+.modal-box button.btn-descargar:hover {
+    background: #d40000;
+}
+.modal-box button.btn-cancelar {
+    background: #333; color: #fff; border: none; padding: 12px 20px;
+    border-radius: 8px; cursor: pointer; width: 100%; font-weight: bold;
+    transition: background 0.2s;
+}
+.modal-box button.btn-cancelar:hover {
+    background: #444;
+}
+.modal-box button:hover { opacity: 0.9; }
+.leaflet-marker-shadow {
+    filter: brightness(0.4);
+}
+
+/* ================================
+   BOTONES DE ACCIÓN UNIFICADOS
+   ================================ */
+.btn-actualizar {
+    pointer-events: auto;
+    width: 52px !important;
+    height: 50px !important;
+    padding: 4px 2px !important;
+    margin: 0 !important;
+
+    background: rgba(18, 18, 18, 0.90) !important;
+    border: 1px solid rgba(255, 0, 0, 0.35) !important;
+    border-radius: 10px !important;
+
+    color: #ffffff !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 2px !important;
+
+    box-shadow: 0 3px 8px rgba(0, 0, 0, 0.5) !important;
+    cursor: pointer;
+    transition: transform 0.1s ease, border-color 0.2s ease;
+}
+
+.btn-actualizar:hover {
+    border-color: #ff0000 !important;
+    background: rgba(120, 10, 10, 0.85) !important; /* Fondo rojo oscuro visible */
+}
+
+.btn-actualizar i {
+    font-size: 16px !important;
+    color: #ff0000 !important;
+}
+
+.btn-actualizar span {
+    color: #ff0000 !important;
+    font-size: 6.5px !important;
+    font-weight: bold;
+    letter-spacing: 0.3px;
+    text-align: center;
+    line-height: 1.1;
+    white-space: normal;
+    text-transform: uppercase;
+}
+
+.btn-actualizar:active {
+    transform: scale(0.92);
+    background: rgba(200, 0, 0, 0.95) !important; /* Color firme al presionar */
+}
+
+.btn-actualizar:active i {
+    transform: rotate(360deg);
+}
+  
+/* ================================
+   EFECTO SONAR ROJO INDEPENDIENTE
+   ================================ */
+.gps-sonar-wave-icon {
+    background: transparent !important;
+    border: none !important;
+}
+
+.sonar-wave {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 30px;
+    height: 30px;
+    margin-top: -15px;
+    margin-left: -15px;
+    border-radius: 50%;
+    background: rgba(255, 0, 0, 0.4);
+    border: 2px solid #FF0000;
+    box-shadow: 0 0 15px #FF0000, inset 0 0 10px #FF0000;
+    pointer-events: none;
+    animation: animacionSonar 2s infinite cubic-bezier(0.215, 0.61, 0.355, 1);
+}
+
+@keyframes animacionSonar {
+    0% {
+        transform: scale(0.2);
+        opacity: 1;
+        box-shadow: 0 0 10px #FF0000;
+    }
+    60% {
+        opacity: 0.8;
+        box-shadow: 0 0 25px #FF0000, 0 0 45px rgba(255, 0, 0, 0.6);
+    }
+    100% {
+        transform: scale(4.5);
+        opacity: 0;
+        box-shadow: 0 0 60px rgba(255, 0, 0, 0);
+    }
+}
+
+/* ================================
+   ESTILOS DE ALERTAS NATIVAS WEB Y CORREO
+   ================================ */
+
+.notif-canal-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #0d0d0d;
+    padding: 7px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    margin-bottom: 6px;
+    cursor: pointer;
+    font-size: 12px;
+    color: #e0e0e0;
+    text-align: left;
+    transition: all 0.2s;
+}
+.notif-canal-item:hover {
+    border-color: rgba(255, 0, 0, 0.6);
+    background: #190a0a;
+}
+.notif-canal-item.canal-no-disponible {
+    opacity: 0.42;
+    cursor: not-allowed;
+    border-color: rgba(255, 255, 255, 0.08);
+}
+.notif-canal-item.canal-no-disponible:hover {
+    background: #0d0d0d;
+    border-color: rgba(255, 255, 255, 0.08);
+}
+.notif-canal-item input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    margin: 0;
+    cursor: pointer;
+    accent-color: #ff0000;
+}
+.notif-badge-estado {
+    display: inline-block;
+    padding: 3px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+.notif-badge-granted {
+    background: rgba(0, 255, 102, 0.2);
+    color: #00ff66;
+    border: 1px solid #00ff66;
+}
+.notif-badge-denied {
+    background: rgba(255, 0, 0, 0.2);
+    color: #ff0000;
+    border: 1px solid #ff0000;
+}
+.notif-badge-default {
+    background: rgba(255, 204, 0, 0.2);
+    color: #ffcc00;
+    border: 1px solid #ffcc00;
+}
+.notif-item-card {
+    background: #0a0a0a;
+    padding: 10px;
+    margin-bottom: 8px;
+    border: 1px solid rgba(255, 0, 0, 0.35);
+    border-radius: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    text-align: left;
+    gap: 8px;
+}
+.notif-desc-box {
+    background: rgba(255, 0, 0, 0.08);
+    border-left: 3px solid #ff0000;
+    padding: 8px 10px;
+    margin-bottom: 12px;
+    font-size: 11px;
+    color: #ddd;
+    text-align: left;
+    border-radius: 0 6px 6px 0;
+    line-height: 1.35;
+}
+.notif-estado-detalle {
+    margin: 8px 0 10px;
+    color: #bbb;
+    font-size: 10px;
+    line-height: 1.35;
+    text-align: left;
+}
+.notif-estado-detalle.ok { color: #00ff66; }
+.notif-estado-detalle.error { color: #ff6b6b; }
+
+/* Modal nativo de alertas con la identidad visual Eagle Track GPS. */
+#modal-notificaciones {
+    background: rgba(0, 0, 0, 0.9);
+    backdrop-filter: blur(8px);
+}
+
+#modal-notificaciones .modal-box {
+    border-color: #ff0000;
+    background:
+        radial-gradient(circle at top right, rgba(255, 0, 0, 0.18), transparent 42%),
+        linear-gradient(155deg, #050505, #171010);
+    color: #ffffff;
+    box-shadow: 0 0 16px rgba(255, 0, 0, 0.55), 0 20px 50px rgba(0, 0, 0, 0.72);
+}
+
+#modal-notificaciones .modal-box h3,
+#modal-notificaciones .modal-box strong,
+#modal-notificaciones .modal-box label,
+#modal-notificaciones .modal-box p {
+    color: #ffffff !important;
+}
+
+#modal-notificaciones .notif-desc-box,
+#modal-notificaciones .notif-canal-item,
+#modal-notificaciones select,
+#modal-notificaciones input {
+    border-color: rgba(255, 0, 0, 0.55) !important;
+    background: rgba(8, 8, 8, 0.92) !important;
+    color: #ffffff !important;
+}
+
+#modal-notificaciones .btn-descargar {
+    border: 1px solid #ff5a5a !important;
+    background: linear-gradient(135deg, #8f0000, #ff0000) !important;
+    color: #ffffff !important;
+}
+
+#modal-notificaciones .btn-cancelar {
+    border: 1px solid rgba(255, 0, 0, 0.4) !important;
+    background: #252525 !important;
+    color: #ffffff !important;
+}
+
+#modal-notificaciones .notif-badge-granted {
+    border-color: #00ff66;
+    background: rgba(0, 255, 102, 0.14);
+    color: #00ff66;
+}
+</style>
+</head>
+<body>
+
+<!-- VIDEO INTRO -->
+<div id="intro-video">
+    <video autoplay muted playsinline>
+        <source src="https://i.imgur.com/BKNCHhJ.mp4" type="video/mp4">
+    </video>
+</div>
+
+<!-- PANTALLA LOGIN -->
+<div id="pantalla-login">
+    <div id="login-box">
+        <input id="email" type="email" placeholder="Correo" />
+        <input id="password" type="password" placeholder="Contraseña" />
+        
+        <input id="marca" type="text" placeholder="Marca del vehículo (ej: Chevrolet)" />
+        <select id="tipo-vehiculo">
+            <option value="" disabled selected>Selecciona tipo de vehículo</option>
+            <option value="https://i.imgur.com/03oNyl5.gif">MOTO</option>
+            <option value="https://i.imgur.com/tEZpL2p.gif">SEDAN</option>
+            <option value="https://i.imgur.com/4vEy00I.gif">TAXI</option>
+            <option value="https://i.imgur.com/P2j8UEP.gif">SUV</option>
+            <option value="https://i.imgur.com/lRIO9He.gif">PICKUP</option>
+            <option value="https://i.imgur.com/DUMnL51.gif">VAN</option>
+            <option value="https://i.imgur.com/Ibzigw5.gif">NKR</option>
+        </select>
+        
+        <button onclick="entrarAlMapa()">INGRESAR</button>
+    </div>
+</div>
+
+<!-- PANTALLA MAPA -->
+<div id="pantalla-mapa" style="display: none;">
+    <div id="mapa2"></div>
+    <div id="mapa-webgl"></div>
+    <div id="alertas-mapa-container" aria-live="polite"></div>
+    <div id="map-loading">
+        <div class="map-loading-radar"></div>
+        <div id="map-loading-texto" class="map-loading-texto">Cargando vehículo</div>
+    </div>
+
+    <div id="hud-container">
+        <!-- 1. Tarjeta superior grande -->
+        <div id="tarjeta-gps"></div>
+        <!-- 2. Tarjeta de ubicación debajo -->
+        <div id="ubicacion-flotante"></div>
+        <!-- 3. Cajas simétricas y botones de acción -->
+        <div id="sensores-flotantes">
+            <div id="velocidad-flotante"></div>
+            <div id="ignicion-flotante"></div>
+            <!-- COLUMNA BOTONES EXTRA (MOTOR Y MAPA) -->
+            <div id="controles-extra-flotantes">
+                <button onclick="document.getElementById('modal-menu-motor').style.display='flex'" class="btn-extra" title="Control de Motor">
+                    <i class="fas fa-key" style="color: white;"></i>
+                </button>
+                <button onclick="document.getElementById('modal-menu-mapa').style.display='flex'" class="btn-extra" title="Cambiar Mapa">
+                    <i class="fas fa-map"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- CONTROLES UNIFICADOS VERTICALES -->
+    <div id="controles-mapa">
+        <button onclick="obtenerPosicionActual()" class="btn-actualizar" title="Refrescar">
+            <i class="fas fa-sync-alt"></i>
+            <span>Refrescar</span>
+        </button>
+        <button onclick="volverAlVehiculo()" class="btn-actualizar" title="Volver al vehículo">
+            <i class="fas fa-crosshairs"></i>
+            <span>Vehículo</span>
+        </button>
+        <button onclick="abrirModalDescarga()" class="btn-actualizar" title="Historial">
+            <i class="fas fa-history"></i>
+            <span>Historial</span>
+        </button>
+        <button onclick="abrirConfirmacionSesion()" class="btn-actualizar" title="Cerrar Sesión">
+            <i class="fas fa-sign-out-alt"></i>
+            <span>Cerrar Sesión</span>
+        </button>
+        <button onclick="abrirModalGeocerca()" class="btn-actualizar" title="Geocerca">
+            <i class="fas fa-draw-polygon"></i>
+            <span>Geocerca</span>
+        </button>
+        <button onclick="abrirStreetView()" class="btn-actualizar" title="Street View">
+            <i class="fas fa-street-view"></i>
+            <span>Street View</span>
+        </button>
+        <!-- BOTÓN DE ALERTAS Y NOTIFICACIONES EAGLE TRACK GPS -->
+        <button onclick="abrirModalNotificaciones()" class="btn-actualizar" title="Alertas" aria-label="Alertas">
+            <i class="fas fa-bell"></i>
+            <span>Alertas</span>
+        </button>
+    </div>
+
+    <pre id="resultado"></pre>
+</div>
+
+<!-- ==============================================
+     COLECCIÓN DE MODALES (SIN ALERTA NATIVA)
+     ============================================== -->
+
+<!-- MODAL ALERTA GLOBAL -->
+<div id="modal-alerta" class="modal-overlay">
+    <div class="modal-box">
+        <h3>Notificación</h3>
+        <p id="texto-alerta" style="margin-bottom:20px; color:#fff;"></p>
+        <button class="btn-descargar" onclick="cerrarModales()">ACEPTAR</button>
+    </div>
+</div>
+
+<!-- MODAL CONFIRMAR CIERRE DE SESIÓN -->
+<div id="modal-confirmar-sesion" class="modal-overlay">
+    <div class="modal-box">
+        <h3>
+            <i class="fas fa-sign-out-alt"></i>
+            CERRAR SESIÓN
+        </h3>
+
+        <p style="margin-bottom:20px; font-weight:bold; color:#fff; font-size:15px;">
+            ¿ESTÁ SEGURO DE CERRAR SESIÓN?
+        </p>
+
+        <button class="btn-descargar" onclick="confirmarCerrarSesion()">
+            ACEPTAR
+        </button>
+
+        <button class="btn-cancelar" onclick="cerrarModales()">
+            CANCELAR
+        </button>
+    </div>
+</div>
+
+<!-- MODAL MENU MOTOR -->
+<div id="modal-menu-motor" class="modal-overlay">
+    <div class="modal-box">
+        <h3>Control de Motor</h3>
+        <button class="btn-descargar" onclick="iniciarComando('engineStop')" style="background:#990000; border:1px solid #ff0000;">APAGAR VEHÍCULO</button>
+        <button class="btn-descargar" onclick="iniciarComando('engineResume')" style="background:#007722; border:1px solid #00ff66;">ENCENDER VEHÍCULO</button>
+        <button class="btn-cancelar" onclick="cerrarModales()">CANCELAR</button>
+    </div>
+</div>
+
+<!-- MODAL CONFIRMACION MOTOR -->
+<div id="modal-confirmacion-motor" class="modal-overlay">
+    <div class="modal-box">
+        <h3 style="color:#ffcc00;"><i class="fas fa-exclamation-triangle"></i> ATENCIÓN</h3>
+        <p style="margin-bottom:20px; font-weight:bold; color:#fff; font-size:15px;">¿ESTÁ SEGURO DE ENVIAR EL COMANDO?</p>
+        <button class="btn-descargar" onclick="confirmarComando()">ACEPTAR</button>
+        <button class="btn-cancelar" onclick="cerrarModales()">CANCELAR</button>
+    </div>
+</div>
+
+<!-- MODAL MAPAS -->
+<div id="modal-menu-mapa" class="modal-overlay">
+    <div class="modal-box">
+        <h3>Seleccionar Mapa</h3>
+        <button class="btn-cancelar" onclick="cambiarMapa('satelite')" style="margin-bottom:10px;">SATÉLITE HD (ESRI)</button>
+        <button class="btn-cancelar" onclick="cambiarMapa('normal')" style="margin-bottom:10px;">MAPA NORMAL (CALLES)</button>
+        <button class="btn-cancelar" onclick="cambiarMapa('oscuro')" style="margin-bottom:10px;">NOCTURNO ROJO (CALLES)</button>
+        <button class="btn-cancelar" onclick="cambiarMapa('relieve3d')" style="margin-bottom:10px;">CONDUCCIÓN 3D</button>
+        <button class="btn-descargar" onclick="cerrarModales()" style="margin-top:5px;">CERRAR</button>
+    </div>
+</div>
+
+<!-- MODAL DESCARGA (HISTORIAL) -->
+<div id="modal-descarga" class="modal-overlay">
+    <div class="modal-box">
+        <h3>Descargar Historial</h3>
+        <select id="rango-descarga" onchange="toggleFechasPersonalizadas()">
+            <option value="hoy">Hoy</option>
+            <option value="ayer">Ayer</option>
+            <option value="semana">La semana pasada</option>
+            <option value="personalizado">Personalizar...</option>
+        </select>
+        
+        <div id="fechas-personalizadas" style="display:none;">
+            <label>Desde:</label>
+            <input type="datetime-local" id="fecha-desde">
+            <label>Hasta:</label>
+            <input type="datetime-local" id="fecha-hasta">
+        </div>
+        
+        <button class="btn-descargar" onclick="ejecutarDescarga()">DESCARGAR EXCEL (CSV)</button>
+        <button class="btn-cancelar" onclick="cerrarModales()">CANCELAR</button>
+    </div>
+</div>
+
+<!-- MODAL GEOCERCA -->
+<div id="modal-geocerca" class="modal-overlay">
+    <div class="modal-box" style="max-width: 420px; max-height: 85vh; overflow-y: auto;">
+        <h3><i class="fas fa-draw-polygon"></i> Gestión de Geocercas</h3>
+        
+        <div style="text-align: left; margin-bottom: 15px; border-bottom: 1px solid rgba(255,0,0,0.3); padding-bottom: 10px;">
+            <strong style="color: #ff0000; font-size: 14px; display: block; margin-bottom: 8px;">Nueva Geocerca</strong>
+            
+            <label>Nombre de la Geocerca:</label>
+            <input type="text" id="geo-nombre" placeholder="Ej: Zona Residencial / Oficina">
+            
+            <label>Descripción:</label>
+            <input type="text" id="geo-desc" placeholder="Ej: Alerta de salida">
+            
+            <label>Radio de cobertura (Metros):</label>
+            <input type="number" id="geo-radio" value="200" min="10" placeholder="200">
+            
+            <button class="btn-descargar" onclick="guardarGeocerca()">CREAR Y GUARDAR GEOCERCA</button>
+        </div>
+
+        <div style="text-align: left;">
+            <strong style="color: #ff0000; font-size: 14px; display: block; margin-bottom: 8px;">Geocercas Registradas</strong>
+            <div id="lista-geocercas" style="max-height: 160px; overflow-y: auto; font-size: 12px;">
+                <p style="color: #888;">Cargando geocercas...</p>
+            </div>
+        </div>
+
+        <button class="btn-cancelar" onclick="cerrarModales()" style="margin-top: 15px;">CERRAR</button>
+    </div>
+</div>
+
+<!-- ==============================================
+     MODAL DE ALERTAS NATIVAS DEL SERVIDOR
+     ============================================== -->
+<div id="modal-notificaciones" class="modal-overlay">
+    <div class="modal-box" style="max-width: 440px; max-height: 88vh; overflow-y: auto;">
+        <h3><i class="fas fa-bell"></i> ALERTAS GPS</h3>
+
+        <!-- ALERTAS REGISTRADAS: PRIMERA SECCIÓN DEL MODAL -->
+        <div style="text-align: left; margin-bottom: 16px; border-bottom: 1px solid rgba(255,0,0,0.35); padding-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <strong style="color: #ff0000; font-size: 14px;">
+                    <i class="fas fa-list-alt"></i> Alertas Registradas
+                </strong>
+                <button onclick="cargarNotificacionesRegistradas()" style="background: transparent; border: 1px solid rgba(255,0,0,0.5); color: #ff0000; border-radius: 4px; padding: 3px 7px; font-size: 10px; cursor: pointer;">
+                    <i class="fas fa-sync-alt"></i> Actualizar
+                </button>
+            </div>
+
+            <div id="lista-notificaciones-servidor" style="max-height: 190px; overflow-y: auto; font-size: 12px;">
+                <p style="color: #888;">Cargando reglas Web...</p>
+            </div>
+        </div>
+
+        <!-- ESTADO Y PRUEBA DEL CANAL WEB -->
+        <div style="background: rgba(255, 0, 0, 0.08); border: 1px solid rgba(255, 0, 0, 0.4); border-radius: 12px; padding: 12px; margin-bottom: 16px; text-align: left;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                <strong style="color: #fff; font-size: 13px;">
+                    <i class="fas fa-desktop" style="color: #ff0000; margin-right: 4px;"></i> Canal Web
+                </strong>
+                <span id="notif-estado-badge" class="notif-badge-estado notif-badge-default">Verificando</span>
+            </div>
+
+            <p style="font-size: 11px; color: #ccc; margin: 4px 0 10px 0; line-height: 1.3;">
+                Las alertas Web son generadas por el servidor y aparecen en una interfaz web conectada con esta misma cuenta.
+            </p>
+
+            <div id="notif-estado-detalle" class="notif-estado-detalle">
+                Verificando si el canal Web está habilitado...
+            </div>
+
+            <div>
+                <button id="btn-probar-web" type="button" class="btn-cancelar" onclick="probarCanalNativo('web')" style="padding: 9px; font-size: 11px; margin-bottom: 0;">
+                    <i class="fas fa-desktop"></i> Probar Web
+                </button>
+            </div>
+        </div>
+
+        <!-- FORMULARIO DE NUEVA REGLA -->
+        <div style="text-align: left; margin-bottom: 16px; border-bottom: 1px solid rgba(255,0,0,0.3); padding-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <strong style="color: #ff0000; font-size: 14px;">
+                    <i class="fas fa-plus-circle"></i> Nueva Regla de Alerta
+                </strong>
+                <button type="button" onclick="cargarCanalesDisponibles(true)" style="background: transparent; border: 1px solid rgba(255, 0, 0, 0.5); color: #ff0000; border-radius: 4px; padding: 2px 6px; font-size: 10px; cursor: pointer;">
+                    <i class="fas fa-sync-alt"></i> Verificar canal
+                </button>
+            </div>
+
+            <label><i class="fas fa-bolt" style="color: #ff0000;"></i> Tipo de Evento / Alerta:</label>
+            <select id="notif-tipo" onchange="actualizarDescripcionTipoNotificacion()" style="margin-bottom: 6px;">
+                <option value="ignitionOn">Ignición ON (Motor Encendido)</option>
+                <option value="ignitionOff">Ignición OFF (Motor Apagado)</option>
+                <option value="deviceMoving">Vehículo en Movimiento</option>
+                <option value="deviceStopped">Vehículo Detenido</option>
+                <option value="deviceOverspeed">Exceso de Límite de Velocidad</option>
+                <option value="geofenceEnter">Entrada a Geocerca / Zona</option>
+                <option value="geofenceExit">Salida de Geocerca / Zona</option>
+                <option value="alarm">Alarma SOS / Pánico / Desconexión</option>
+                <option value="deviceOnline">Dispositivo En Línea (Señal GPS OK)</option>
+                <option value="deviceOffline">Dispositivo Fuera de Línea (Sin Señal)</option>
+                <option value="allEvents">Todos los Eventos</option>
+            </select>
+
+            <!-- Explicación dinámica del evento -->
+            <div id="notif-tipo-desc" class="notif-desc-box">
+                Se enviará una alerta en tiempo real cada vez que la llave de contacto sea activada o el motor sea encendido.
+            </div>
+
+            <!-- Parámetros extras para overspeed -->
+            <div id="notif-extras-velocidad" style="display:none; margin-bottom: 10px;">
+                <label><i class="fas fa-tachometer-alt" style="color:#ff0000;"></i> Límite de Velocidad (km/h):</label>
+                <input type="number" id="notif-limite-vel" placeholder="Ej: 80" value="80" min="10" max="250" style="margin-bottom: 5px;">
+            </div>
+
+            <label><i class="fas fa-broadcast-tower" style="color: #ff0000;"></i> Canal de Envío:</label>
+            <div style="background: #000; border: 1px solid rgba(255,0,0,0.3); border-radius: 8px; padding: 8px; margin-bottom: 12px;">
+                <label class="notif-canal-item" data-channel="web" style="margin-bottom: 0;">
+                    <input type="checkbox" id="notif-canal-web" checked>
+                    <span><strong>Web</strong> (Aviso visible en la interfaz web conectada)</span>
+                </label>
+            </div>
+
+            <label class="notif-canal-item" style="margin-bottom: 14px; background: #151515;">
+                <input type="checkbox" id="notif-always" checked>
+                <span><strong>Siempre activo:</strong> aplicar la regla sin depender de un calendario</span>
+            </label>
+
+            <button id="btn-guardar-alerta" class="btn-descargar" onclick="guardarNotificacionEagleTrack()">
+                <i class="fas fa-save"></i> GUARDAR Y ACTIVAR ALERTA EN SERVIDOR
+            </button>
+        </div>
+
+        <button class="btn-cancelar" onclick="cerrarModales()" style="margin-top: 15px;">
+            CERRAR
+        </button>
+    </div>
+</div>
+
+<!-- SCRIPTS UNIFICADOS -->
+<script>
+    const videoIntro = document.querySelector('#intro-video video');
+    const pantallaIntro = document.getElementById('intro-video');
+
+    if (videoIntro && pantallaIntro) {
+        videoIntro.addEventListener('ended', () => {
+            pantallaIntro.classList.add('saliendo');
+            setTimeout(() => {
+                pantallaIntro.style.display = 'none';
+            }, 800);
+        });
+    }
+  
+    // Variables Globales del Mapa y Dispositivos
+    let mapa = null;
+    let capaMapa = null;
+    let capaGeocercas = null;
+    let mapaWebGL = null;
+    let marcadorWebGL = null;
+    let modoWebGLActual = null;
+    let estiloMapaActual = 'satelite'; 
+    let marcadoresVehiculos = {};
+    let marcadoresSonar = {};
+    let historialRutas = {};
+    let lineasRuta = {};
+    
+    let dispositivoActualId = null;
+    let comandoPendiente = null;
+    let ultimaLatitud = null;
+    let ultimaLongitud = null;
+  
+    let mapaCentradoInicialmente = false;
+
+    // Variables auxiliares para la configuración de alertas del servidor
+    let dispositivosActuales = {};
+    let tiposNotificacionDisponibles = [
+        'ignitionOn', 'ignitionOff', 'deviceMoving', 'deviceStopped',
+        'deviceOverspeed', 'geofenceEnter', 'geofenceExit', 'alarm',
+        'deviceOnline', 'deviceOffline'
+    ];
+    let canalesNativosDisponibles = new Set();
+    let tiposAlertasWebRegistradas = new Set();
+    let eventosAlertasVistos = new Set();
+    let monitorAlertasInicializado = false;
+    let consultaAlertasEnCurso = false;
+    let ultimaConsultaAlertas = null;
+    let reglasAlertasWebConsultadas = false;
+
+    const EAGLE_TRACK_API_ORIGIN = 'https://whitecargps.duckdns.org';
+
+    window.addEventListener('load', () => {
+        const emailGuardado = localStorage.getItem('eagle_email');
+        const passwordGuardado = localStorage.getItem('eagle_password');
+        const marcaGuardada = localStorage.getItem('eagle_marca');
+        const tipoGuardado = localStorage.getItem('eagle_tipo_gif');
+
+        if (marcaGuardada) document.getElementById('marca').value = marcaGuardada;
+        if (tipoGuardado) document.getElementById('tipo-vehiculo').value = tipoGuardado;
+
+        if (emailGuardado && passwordGuardado && marcaGuardada && tipoGuardado) {
+            document.getElementById('email').value = emailGuardado;
+            document.getElementById('password').value = passwordGuardado;
+            
+            document.getElementById('pantalla-login').style.display = 'none';
+            document.getElementById('pantalla-mapa').style.display = 'block';
+            crearMapaReal();
+            obtenerPosicionActual();
+        }
+    });
+
+    setInterval(() => {
+        obtenerPosicionActual();
+    }, 10000);
+
+    setInterval(() => {
+        consultarEventosAlertasWeb();
+    }, 5000);
+
+    function authHeaders() {
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        return {
+            'Authorization': 'Basic ' + btoa(email + ':' + password)
+        };
+    }
+    
+    // Función central para reemplazar todos los alerts nativos
+    function mostrarAlertaPersonalizada(mensaje) {
+        cerrarModales(); 
+        document.getElementById('texto-alerta').innerText = mensaje;
+        document.getElementById('modal-alerta').style.display = 'flex';
+    }
+
+    function abrirConfirmacionSesion() {
+        cerrarModales();
+        document.getElementById('modal-confirmar-sesion').style.display = 'flex';
+    }
+
+    function confirmarCerrarSesion() {
+        cerrarSesion();
+    }
+
+    function cerrarModales() {
+        const modales = document.querySelectorAll('.modal-overlay');
+        modales.forEach(modal => modal.style.display = 'none');
+        comandoPendiente = null;
+    }
+
+    function entrarAlMapa() {
+        const email = document.getElementById('email').value.trim();
+        const password = document.getElementById('password').value;
+        const marca = document.getElementById('marca').value.trim();
+        const tipoVehiculo = document.getElementById('tipo-vehiculo').value;
+
+        if (!email || !password || !marca || !tipoVehiculo) {
+            mostrarAlertaPersonalizada("Por favor, completa todos los campos.");
+            return;
+        }
+
+        localStorage.setItem('eagle_email', email);
+        localStorage.setItem('eagle_password', password);
+        localStorage.setItem('eagle_marca', marca);
+        localStorage.setItem('eagle_tipo_gif', tipoVehiculo);
+
+        tiposAlertasWebRegistradas = new Set();
+        reglasAlertasWebConsultadas = false;
+
+        document.getElementById('pantalla-login').style.display = 'none';
+        document.getElementById('pantalla-mapa').style.display = 'block';
+
+        crearMapaReal();
+        obtenerPosicionActual();
+    }
+  
+    async function obtenerPosicionActual() {
+        const resultado = document.getElementById('resultado');
+        if (resultado) resultado.innerText = 'Consultando posiciones...';
+
+        try {
+            const dispositivosResponse = await fetch('https://whitecargps.duckdns.org/api/devices', {
+                headers: authHeaders()
+            });
+
+            const dispositivos = await dispositivosResponse.json();
+            let posicionEncontrada = false;
+
+            if (!reglasAlertasWebConsultadas) {
+                reglasAlertasWebConsultadas = true;
+                actualizarReglasWebRegistradas().catch(error => {
+                    reglasAlertasWebConsultadas = false;
+                    console.warn('No se pudieron cargar las reglas Web:', error);
+                });
+            }
+
+            for (const dispositivo of dispositivos) {
+                const positionId = dispositivo.positionId;
+                if (!positionId) continue;
+
+                const posicionResponse = await fetch('https://whitecargps.duckdns.org/api/positions?id=' + positionId, {
+                    headers: authHeaders()
+                });
+
+                const posiciones = await posicionResponse.json();
+                if (!posiciones.length) continue;
+
+                const posicion = posiciones[0];
+                actualizarMapa(posicion, dispositivo);
+                posicionEncontrada = true;
+            }
+
+            if (!posicionEncontrada) {
+                const textoCarga = document.getElementById('map-loading-texto');
+                if (textoCarga) textoCarga.textContent = 'Esperando señal del vehículo';
+            }
+        } catch (error) {
+            if (resultado) resultado.innerText = 'ERROR: ' + error;
+            const textoCarga = document.getElementById('map-loading-texto');
+            if (textoCarga) textoCarga.textContent = 'Reconectando con el vehículo';
+        }
+    }
+
+    function crearMapaReal() {
+        const contenedor = document.getElementById('mapa2');
+        contenedor.style.display = 'block';
+
+        if (mapa) {
+            mapa.remove();
+            mapa = null;
+            capaMapa = null;
+            capaGeocercas = null;
+        }
+        if (mapaWebGL) {
+            mapaWebGL.remove();
+            mapaWebGL = null;
+            marcadorWebGL = null;
+            modoWebGLActual = null;
+        }
+        document.getElementById('mapa-webgl').style.display = 'none';
+        document.getElementById('mapa-webgl').innerHTML = '';
+        contenedor.style.display = 'block';
+        mapaCentradoInicialmente = false;
+        marcadoresVehiculos = {};
+        marcadoresSonar = {};
+        historialRutas = {};
+        lineasRuta = {};
+        dispositivosActuales = {};
+        eventosAlertasVistos = new Set();
+        monitorAlertasInicializado = false;
+        ultimaConsultaAlertas = null;
+
+        const alertasMapa = document.getElementById('alertas-mapa-container');
+        if (alertasMapa) alertasMapa.innerHTML = '';
+
+        const cargaMapa = document.getElementById('map-loading');
+        const textoCarga = document.getElementById('map-loading-texto');
+        if (cargaMapa) cargaMapa.classList.remove('oculto');
+        if (textoCarga) textoCarga.textContent = 'Cargando vehículo';
+        document.getElementById('tarjeta-gps').innerHTML = '';
+        document.getElementById('ubicacion-flotante').innerHTML = '';
+        document.getElementById('velocidad-flotante').innerHTML = '';
+        document.getElementById('ignicion-flotante').innerHTML = '';
+
+        contenedor.innerHTML = '';
+        mapa = L.map('mapa2', { zoomControl: false }).setView([4.60971, -74.08175], 12);
+        
+        capaGeocercas = L.layerGroup().addTo(mapa);
+
+        aplicarEstiloMapa(estiloMapaActual);
+    }
+
+    // GESTIÓN DE MAPAS
+    function aplicarEstiloMapa(estilo) {
+        if (capaMapa) {
+            mapa.removeLayer(capaMapa);
+            capaMapa = null;
+        }
+
+        if (estilo === 'oscuro' || estilo === 'relieve3d') {
+            activarMapaWebGL(estilo);
+            estiloMapaActual = estilo;
+            return;
+        }
+
+        desactivarMapaWebGL();
+
+        if (estilo === 'satelite') {
+            const imagen = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+                maxNativeZoom: 19,
+                maxZoom: 24,
+                keepBuffer: 4,
+                updateWhenZooming: false,
+                attribution: '&copy; Esri World Imagery'
+            });
+            const referencias = L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
+                maxNativeZoom: 19,
+                maxZoom: 24,
+                opacity: 0.92,
+                attribution: '&copy; Esri'
+            });
+            capaMapa = L.layerGroup([imagen, referencias]);
+        } else if (estilo === 'normal') {
+            capaMapa = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+                maxNativeZoom: 21,
+                maxZoom: 23,
+                attribution: '&copy; MapData'
+            });
+        } else {
+            capaMapa = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
+                maxZoom: 23,
+                attribution: '&copy; MapData'
+            });
+        }
+
+        capaMapa.addTo(mapa);
+        estiloMapaActual = estilo;
+    }
+
+    function desactivarMapaWebGL() {
+        const contenedorWebGL = document.getElementById('mapa-webgl');
+        const contenedorLeaflet = document.getElementById('mapa2');
+
+        if (mapaWebGL) {
+            mapaWebGL.remove();
+            mapaWebGL = null;
+            marcadorWebGL = null;
+            modoWebGLActual = null;
+        }
+
+        contenedorWebGL.classList.remove('modo-conduccion');
+        contenedorWebGL.style.display = 'none';
+        contenedorWebGL.innerHTML = '';
+        contenedorLeaflet.style.display = 'block';
+        if (mapa) setTimeout(() => mapa.invalidateSize(), 0);
+    }
+
+    function activarMapaWebGL(modo) {
+        const contenedorWebGL = document.getElementById('mapa-webgl');
+        const contenedorLeaflet = document.getElementById('mapa2');
+
+        if (mapaWebGL) mapaWebGL.remove();
+        mapaWebGL = null;
+        marcadorWebGL = null;
+        modoWebGLActual = modo;
+        contenedorWebGL.innerHTML = '';
+        contenedorWebGL.style.display = 'block';
+        contenedorWebGL.classList.toggle('modo-conduccion', modo === 'relieve3d');
+        contenedorLeaflet.style.display = 'none';
+
+        const centro = ultimaLatitud && ultimaLongitud
+            ? [ultimaLongitud, ultimaLatitud]
+            : [-74.08175, 4.60971];
+
+        const opciones = {
+            container: 'mapa-webgl',
+            style: modo === 'oscuro'
+                ? 'https://tiles.openfreemap.org/styles/fiord'
+                : 'https://tiles.openfreemap.org/styles/liberty',
+            center: centro,
+            zoom: modo === 'relieve3d' ? 18.2 : 15.5,
+            pitch: modo === 'relieve3d' ? 76 : 0,
+            bearing: 0,
+            maxZoom: 22,
+            maxPitch: 85,
+            canvasContextAttributes: { antialias: true }
+        };
+
+        mapaWebGL = new maplibregl.Map(opciones);
+        mapaWebGL.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'bottom-right');
+
+        mapaWebGL.on('load', () => {
+            if (modo === 'oscuro') configurarEstiloNocturnoRojo();
+            if (modo === 'relieve3d') configurarConduccion3D();
+
+            if (ultimaLatitud && ultimaLongitud) {
+                actualizarMarcadorWebGL({
+                    latitude: ultimaLatitud,
+                    longitude: ultimaLongitud,
+                    course: 0
+                });
+            }
+        });
+    }
+
+    function configurarEstiloNocturnoRojo() {
+        if (!mapaWebGL) return;
+
+        mapaWebGL.getStyle().layers.forEach(capa => {
+            try {
+                const id = capa.id.toLowerCase();
+                if (capa.type === 'line' && /(road|street|highway|transport|bridge|tunnel)/.test(id)) {
+                    const color = /(motorway|trunk|primary)/.test(id) ? '#ff2038' : '#8f1324';
+                    mapaWebGL.setPaintProperty(capa.id, 'line-color', color);
+                    mapaWebGL.setPaintProperty(capa.id, 'line-opacity', 0.92);
+                }
+                if (capa.type === 'symbol' && capa.layout?.['text-field']) {
+                    mapaWebGL.setPaintProperty(capa.id, 'text-color', '#ffffff');
+                    mapaWebGL.setPaintProperty(capa.id, 'text-halo-color', '#050505');
+                    mapaWebGL.setPaintProperty(capa.id, 'text-halo-width', 1.3);
+                }
+            } catch (error) {
+                console.debug('Capa nocturna sin ajuste:', capa.id);
+            }
+        });
+    }
+
+    function configurarConduccion3D() {
+        if (!mapaWebGL) return;
+
+        if (!mapaWebGL.getSource('terreno-egps')) {
+            mapaWebGL.addSource('terreno-egps', {
+                type: 'raster-dem',
+                url: 'https://tiles.mapterhorn.com/tilejson.json'
+            });
+            mapaWebGL.setTerrain({ source: 'terreno-egps', exaggeration: 1.35 });
+            mapaWebGL.addLayer({
+                id: 'sombras-terreno-egps',
+                type: 'hillshade',
+                source: 'terreno-egps',
+                paint: {
+                    'hillshade-shadow-color': '#17100b',
+                    'hillshade-highlight-color': '#fff0cc',
+                    'hillshade-exaggeration': 0.45
+                }
+            });
+        }
+
+        if (!mapaWebGL.getSource('edificios-egps')) {
+            mapaWebGL.addSource('edificios-egps', {
+                type: 'vector',
+                url: 'https://tiles.openfreemap.org/planet'
+            });
+
+            const capaEtiquetas = mapaWebGL.getStyle().layers.find(capa =>
+                capa.type === 'symbol' && capa.layout?.['text-field']
+            )?.id;
+
+            mapaWebGL.addLayer({
+                id: 'edificios-3d-egps',
+                source: 'edificios-egps',
+                'source-layer': 'building',
+                type: 'fill-extrusion',
+                minzoom: 15,
+                filter: ['!=', ['get', 'hide_3d'], true],
+                paint: {
+                    'fill-extrusion-color': [
+                        'interpolate', ['linear'], ['coalesce', ['get', 'render_height'], 8],
+                        0, '#d9d6cf', 60, '#9aa7b4', 180, '#647587'
+                    ],
+                    'fill-extrusion-height': [
+                        'interpolate', ['linear'], ['zoom'],
+                        15, 0,
+                        16, ['coalesce', ['get', 'render_height'], 8]
+                    ],
+                    'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0],
+                    'fill-extrusion-opacity': 0.88
+                }
+            }, capaEtiquetas);
+        }
+
+        if (typeof mapaWebGL.setSky === 'function') {
+            mapaWebGL.setSky({
+                'sky-color': '#9fd3f2',
+                'horizon-color': '#eaf5fb',
+                'fog-color': '#dceaf2',
+                'sky-horizon-blend': 0.72,
+                'horizon-fog-blend': 0.55,
+                'fog-ground-blend': 0.35
+            });
+        }
+    }
+
+    function actualizarMarcadorWebGL(posicion) {
+        if (!mapaWebGL || !mapaWebGL.isStyleLoaded()) return;
+
+        const coordenadas = [posicion.longitude, posicion.latitude];
+        if (!marcadorWebGL) {
+            const elemento = document.createElement('div');
+            elemento.className = 'marcador-webgl-vehiculo';
+            marcadorWebGL = new maplibregl.Marker({ element: elemento, anchor: 'bottom' })
+                .setLngLat(coordenadas)
+                .addTo(mapaWebGL);
+        } else {
+            marcadorWebGL.setLngLat(coordenadas);
+        }
+
+        if (modoWebGLActual === 'relieve3d') {
+            mapaWebGL.easeTo({
+                center: coordenadas,
+                zoom: Math.max(mapaWebGL.getZoom(), 18.2),
+                pitch: 76,
+                bearing: Number.isFinite(Number(posicion.course)) ? Number(posicion.course) : mapaWebGL.getBearing(),
+                offset: [0, 125],
+                duration: 950
+            });
+        }
+    }
+
+    function cambiarMapa(estilo) {
+        aplicarEstiloMapa(estilo);
+        cerrarModales();
+    }
+
+    // FUNCIONES DE CONTROL DE MOTOR
+    function iniciarComando(tipo) {
+        if (!dispositivoActualId) {
+            mostrarAlertaPersonalizada("No se ha detectado ningún dispositivo activo.");
+            return;
+        }
+        comandoPendiente = tipo;
+        document.getElementById('modal-menu-motor').style.display = 'none';
+        document.getElementById('modal-confirmacion-motor').style.display = 'flex';
+    }
+
+    async function confirmarComando() {
+        if (!dispositivoActualId || !comandoPendiente) return;
+        
+        document.getElementById('modal-confirmacion-motor').style.display = 'none';
+        
+        try {
+            const response = await fetch('https://whitecargps.duckdns.org/api/commands/send', {
+                method: 'POST',
+                headers: {
+                    ...authHeaders(),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    deviceId: dispositivoActualId,
+                    type: comandoPendiente
+                })
+            });
+
+            if (response.ok) {
+                mostrarAlertaPersonalizada('Comando enviado con éxito al vehículo.');
+            } else {
+                mostrarAlertaPersonalizada(`Error al enviar. Estado del servidor: ${response.status}`);
+            }
+        } catch (error) {
+            mostrarAlertaPersonalizada('Error de conexión al enviar el comando.');
+        }
+        comandoPendiente = null;
+    }
+
+    async function obtenerNombreLugar(latitude, longitude) {     
+        try {
+            const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}&zoom=18&addressdetails=1`);
+            const datos = await response.json();
+            const direccion = datos.address || {};
+            const partes = [
+                direccion.city, direccion.town, direccion.municipality,
+                direccion.suburb, direccion.neighbourhood, direccion.road, direccion.building
+            ].filter(Boolean);
+
+            return partes.length ? partes.join(', ') : 'Ubicación desconocida';
+        } catch (error) {
+            return 'Ubicación desconocida';
+        }
+    }  
+  
+    function actualizarMapa(posicion, dispositivo) {
+        if (!mapa) {
+            crearMapaReal();
+        }
+        
+        const lat = posicion.latitude;
+        const lng = posicion.longitude;
+        const idDispositivo = dispositivo.id;
+
+        dispositivosActuales[idDispositivo] = dispositivo;
+        
+        dispositivoActualId = idDispositivo;
+        ultimaLatitud = lat;
+        ultimaLongitud = lng;
+        
+        if (!mapaCentradoInicialmente) {
+            mapa.setView([lat, lng], 16);
+            mapaCentradoInicialmente = true;
+        }
+
+        if (!historialRutas[idDispositivo]) {
+            historialRutas[idDispositivo] = [];
+        }
+        historialRutas[idDispositivo].push([lat, lng]);
+
+        if (!lineasRuta[idDispositivo]) {
+            lineasRuta[idDispositivo] = L.polyline(historialRutas[idDispositivo], {
+                color: '#ff0000',
+                weight: 4,
+                opacity: 0.7,
+                lineJoin: 'round'
+            }).addTo(mapa);
+        } else {
+            lineasRuta[idDispositivo].setLatLngs(historialRutas[idDispositivo]);
+        }
+
+        const placaVehiculo = dispositivo.name || 'SIN PLACA';
+        const estadoMovimiento = posicion.attributes?.motion === true ? 'EN MOVIMIENTO' : 'DETENIDO';
+        const colorMovimiento = posicion.attributes?.motion === true ? '#00ff00' : '#ff0000';
+        
+        // 1. Icono de vehículo ORIGINAL intacto
+        const iconoGPS = L.icon({
+            iconUrl: 'https://i.imgur.com/2Q5Mv5j.png',
+            iconSize: [95, 95],
+            iconAnchor: [47.5, 75],
+            tooltipAnchor: [0, -55],
+            shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+            shadowSize: [95, 95],
+            shadowAnchor: [47.5, 75]
+        });
+
+        // 2. Icono exclusivo para el pulso Sonar
+        const iconoSonar = L.divIcon({
+            className: 'gps-sonar-wave-icon',
+            html: '<div class="sonar-wave"></div>',
+            iconSize: [0, 0],
+            iconAnchor: [0, 0]
+        });
+
+        // 3. Crear o mover el SONAR (debajo del vehículo)
+        if (!marcadoresSonar[idDispositivo]) {
+            marcadoresSonar[idDispositivo] = L.marker([lat, lng], {
+                icon: iconoSonar,
+                zIndexOffset: -1000,
+                interactive: false
+            }).addTo(mapa);
+        } else {
+            marcadoresSonar[idDispositivo].setLatLng([lat, lng]);
+        }
+
+        // 4. Crear o mover el VEHÍCULO
+        const tooltipHTML = `
+            <div>
+                <div class="gps-placa">${placaVehiculo}</div>
+                <div class="gps-estado-movimiento">
+                    <span class="gps-punto-movimiento" style="color:${colorMovimiento} !important;">●</span>
+                    <span class="gps-texto-movimiento">${estadoMovimiento}</span>
+                </div>
+            </div>
+        `;
+
+        if (!marcadoresVehiculos[idDispositivo]) {
+            let nuevoMarcador = L.marker([lat, lng], {
+                icon: iconoGPS
+            }).addTo(mapa);
+            nuevoMarcador.bindTooltip(tooltipHTML, {
+                permanent: true,
+                direction: 'top',
+                offset: [0, -25],
+                className: 'gps-placa-estado'
+            });
+            marcadoresVehiculos[idDispositivo] = nuevoMarcador;
+        } else {
+            let marcadorExistente = marcadoresVehiculos[idDispositivo];
+            marcadorExistente.setLatLng([lat, lng]);
+            marcadorExistente.setTooltipContent(tooltipHTML);
+        }
+
+        const velocidadKmh = posicion.speed !== undefined ? (posicion.speed * 1.852).toFixed(1) : '0.0';
+
+        let velocidadDestacada = `
+            <div class="velocidad-destacada">
+                <div style="display:flex; align-items:center; justify-content:center; gap:5px;">
+                    <img src="https://i.imgur.com/sOMm2Fr.gif" style="width:60px; height:45px; object-fit:contain;">
+                    <div style="color:#ffffff; font-size:18px; font-weight:bold; line-height:1;">
+                        ${velocidadKmh}
+                    </div>
+                    <div style="color:#ccc; font-size:10px; margin-top:5px;">km/h</div>
+                </div>
+                <div style="color:#ff0000; font-size:9px; margin-top:5px; letter-spacing:1px; font-weight:bold;">
+                    VELOCIDAD
+                </div>
+            </div>
+        `;
+        
+        let ignicionDestacada = '';
+        const ignicion = posicion.attributes?.ignition === true || (posicion.speed && posicion.speed > 0);
+
+        if (ignicion) {
+            ignicionDestacada = `
+                <div class="ignicion-destacada">
+                    <img src="https://i.imgur.com/LQHjXWa.png" style="width:50px; height:30px; object-fit:contain; display:block; margin:auto;">
+                    <div style="color:#00ff66; font-size:11px; font-weight:bold; margin-top:6px; letter-spacing:1px;">ENCENDIDO</div>
+                </div>
+            `;
+        } else {
+            ignicionDestacada = `
+                <div class="ignicion-destacada">
+                    <img src="https://i.imgur.com/Jrl77a5.png" style="width:50px; height:30px; object-fit:contain; display:block; margin:auto;">
+                    <div style="color:#ff0000; font-size:11px; font-weight:bold; margin-top:6px; letter-spacing:1px;">APAGADO</div>
+                </div>
+            `;
+        }      
+
+        obtenerNombreLugar(lat, lng).then(nombreLugar => {
+            document.getElementById('ubicacion-flotante').innerHTML = `
+                <div class="ubicacion-destacada">
+                    <img src="https://i.imgur.com/1VCjVnA.gif" style="width:35px; height:35px; object-fit:contain; flex-shrink:0;">
+                    <div style="color:#ffffff; font-size:11px; font-weight:bold; line-height:1.3; text-align:center; word-wrap:break-word;">
+                        ${nombreLugar}
+                    </div>
+                </div>
+            `;
+        });
+
+        const marcaGuardada = localStorage.getItem('eagle_marca') || 'SIN MARCA';
+        const gifGuardado = localStorage.getItem('eagle_tipo_gif') || 'https://i.imgur.com/v8fX3x1.gif';
+
+        document.getElementById('tarjeta-gps').innerHTML = `
+            <div class="gps-tarjeta-cabecera">
+                <img src="${gifGuardado}" class="gps-vehiculo-img" alt="Vehículo">
+                <div class="gps-vehiculo-info">
+                    <div class="gps-vehiculo">${dispositivo.name || 'SIN PLACA'}</div>
+                    <div class="gps-vehiculo-marca">${marcaGuardada}</div>
+                    <div class="gps-estado ${posicion.valid ? 'gps-ok' : 'gps-error'}">
+                        ● ${posicion.valid ? 'GPS ACTIVO' : 'GPS SIN SEÑAL'}
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.getElementById('velocidad-flotante').innerHTML = velocidadDestacada;
+        document.getElementById('ignicion-flotante').innerHTML = ignicionDestacada;
+
+        const cargaMapa = document.getElementById('map-loading');
+        if (cargaMapa) cargaMapa.classList.add('oculto');
+
+        actualizarMarcadorWebGL(posicion);
+
+    }
+
+    function volverAlVehiculo() {
+        if (!mapa || !dispositivoActualId) {
+            mostrarAlertaPersonalizada("No se ha detectado ningún vehículo.");
+            return;
+        }
+
+        if (mapaWebGL && ultimaLatitud && ultimaLongitud) {
+            mapaWebGL.easeTo({
+                center: [ultimaLongitud, ultimaLatitud],
+                zoom: modoWebGLActual === 'relieve3d' ? 18.2 : 17,
+                pitch: modoWebGLActual === 'relieve3d' ? 76 : 0,
+                duration: 900
+            });
+            return;
+        }
+
+        const marcador = marcadoresVehiculos[dispositivoActualId];
+
+        if (marcador) {
+            const posicion = marcador.getLatLng();
+
+            mapa.setView(posicion, 18, {
+                animate: true
+            });
+        }
+    }
+
+    function cerrarSesion() {
+        localStorage.removeItem('eagle_email');
+        localStorage.removeItem('eagle_password');
+        localStorage.removeItem('eagle_marca');
+        localStorage.removeItem('eagle_tipo_gif');
+
+        document.getElementById('pantalla-mapa').style.display = 'none';
+        document.getElementById('pantalla-login').style.display = 'flex';
+
+        document.getElementById('email').value = '';
+        document.getElementById('password').value = '';
+        document.getElementById('marca').value = '';
+        document.getElementById('tipo-vehiculo').value = '';
+
+        if (mapa) {
+            mapa.remove();
+            mapa = null;
+            capaMapa = null;
+            capaGeocercas = null;
+        }
+        if (mapaWebGL) {
+            mapaWebGL.remove();
+            mapaWebGL = null;
+            marcadorWebGL = null;
+            modoWebGLActual = null;
+        }
+        
+        marcadoresVehiculos = {};
+        marcadoresSonar = {};
+        historialRutas = {};
+        lineasRuta = {};
+        dispositivosActuales = {};
+        dispositivoActualId = null;
+        mapaCentradoInicialmente = false;
+        tiposAlertasWebRegistradas = new Set();
+        eventosAlertasVistos = new Set();
+        monitorAlertasInicializado = false;
+        ultimaConsultaAlertas = null;
+        reglasAlertasWebConsultadas = false;
+
+        const alertasMapa = document.getElementById('alertas-mapa-container');
+        if (alertasMapa) alertasMapa.innerHTML = '';
+    }
+
+    function abrirModalDescarga() {
+        document.getElementById('modal-descarga').style.display = 'flex';
+    }
+
+    function toggleFechasPersonalizadas() {
+        const rango = document.getElementById('rango-descarga').value;
+        document.getElementById('fechas-personalizadas').style.display = rango === 'personalizado' ? 'block' : 'none';
+    }
+
+    function obtenerFechasISO(rango) {
+        let fromDate, toDate;
+        const now = new Date();
+        
+        if (rango === 'hoy') {
+            fromDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+            toDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+        } else if (rango === 'ayer') {
+            fromDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 0, 0, 0);
+            toDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1, 23, 59, 59);
+        } else if (rango === 'semana') {
+            fromDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 7, 0, 0, 0);
+            toDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59);
+        } else {
+            const valDesde = document.getElementById('fecha-desde').value;
+            const valHasta = document.getElementById('fecha-hasta').value;
+            if (!valDesde || !valHasta) return null;
+            fromDate = new Date(valDesde);
+            toDate = new Date(valHasta);
+        }
+        return { from: fromDate.toISOString(), to: toDate.toISOString() };
+    }
+
+    async function ejecutarDescarga() {
+        const rango = document.getElementById('rango-descarga').value;
+        const fechas = obtenerFechasISO(rango);
+
+        if (!fechas) {
+            mostrarAlertaPersonalizada("Por favor selecciona correctamente las fechas.");
+            return;
+        }
+
+        const resultado = document.getElementById('resultado');
+        if (resultado) resultado.innerText = 'Preparando descarga de historial...';
+        
+        try {
+            const dispResp = await fetch('https://whitecargps.duckdns.org/api/devices', { headers: authHeaders() });
+            const dispositivos = await dispResp.json();
+
+            let csvContent = "sep=;\n"; 
+            csvContent += "Vehiculo;Fecha/Hora;Latitud;Longitud;Velocidad (km/h);Ignicion\n";
+            let datosEncontrados = false;
+
+            for (const disp of dispositivos) {
+                const url = `https://whitecargps.duckdns.org/api/positions?deviceId=${disp.id}&from=${encodeURIComponent(fechas.from)}&to=${encodeURIComponent(fechas.to)}`;
+                const posResp = await fetch(url, { headers: authHeaders() });
+
+                if (posResp.ok) {
+                    const posiciones = await posResp.json();
+                    if (posiciones.length > 0) datosEncontrados = true;
+                    
+                    posiciones.forEach(p => {
+                        const velocidadKmh = p.speed !== undefined ? (p.speed * 1.852).toFixed(1) : "0.0";
+                        const fechaLocal = new Date(p.deviceTime).toLocaleString().replace(/,/g, '');
+                        const ignicionTxt = p.attributes?.ignition ? "ENCENDIDO" : "APAGADO";
+                        
+                        csvContent += `"${disp.name}";"${fechaLocal}";${p.latitude};${p.longitude};${velocidadKmh};"${ignicionTxt}"\n`;
+                    });
+                }
+            }
+
+            if (!datosEncontrados) {
+                mostrarAlertaPersonalizada("No se encontraron posiciones en el rango seleccionado.");
+                if (resultado) resultado.innerText = 'Sin datos para descargar.';
+                return;
+            }
+
+            const blob = new Blob(["\uFEFF" + csvContent], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            const urlBlob = URL.createObjectURL(blob);
+            link.setAttribute("href", urlBlob);
+            link.setAttribute("download", `Historial_GPS_${rango}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            if (resultado) resultado.innerText = 'Descarga completada con éxito.';
+            cerrarModales();
+            mostrarAlertaPersonalizada("Descarga completada. El archivo ha sido guardado.");
+
+        } catch (e) {
+            mostrarAlertaPersonalizada('Error al descargar los datos: ' + e);
+            if (resultado) resultado.innerText = 'Error en la descarga: ' + e;
+        }
+    }
+
+    /* ==============================================
+       GESTOR DE GEOCERCAS (EAGLE TRACK GPS)
+       ============================================== */
+    async function abrirModalGeocerca() {
+        document.getElementById('modal-geocerca').style.display = 'flex';
+        await cargarGeocercas();
+    }
+
+    async function cargarGeocercas() {
+        const contenedor = document.getElementById('lista-geocercas');
+        contenedor.innerHTML = '<p style="color: #ccc;">Cargando...</p>';
+        
+        try {
+            const res = await fetch('https://whitecargps.duckdns.org/api/geofences', { headers: authHeaders() });
+            if (!res.ok) throw new Error('Error al obtener geocercas');
+            
+            const geocercas = await res.json();
+            contenedor.innerHTML = '';
+            
+            if (mapa && capaGeocercas) {
+                capaGeocercas.clearLayers();
+            }
+
+            if (geocercas.length === 0) {
+                contenedor.innerHTML = '<p style="color: #888;">No hay geocercas creadas.</p>';
+                return;
+            }
+
+            geocercas.forEach(g => {
+                const div = document.createElement('div');
+                div.style.cssText = 'background: #000; padding: 8px; margin-bottom: 6px; border: 1px solid rgba(255,0,0,0.3); border-radius: 6px; display: flex; justify-content: space-between; align-items: center;';
+                div.innerHTML = `
+                    <div>
+                        <strong style="color: #fff; font-size: 12px;">${g.name}</strong>
+                        <div style="font-size: 10px; color: #aaa;">${g.description || 'Sin descripción'}</div>
+                    </div>
+                    <button onclick="eliminarGeocerca(${g.id})" style="background: #ff0000; color: #fff; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer;">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                `;
+                contenedor.appendChild(div);
+
+                if (g.area && g.area.startsWith('CIRCLE') && mapa && capaGeocercas) {
+                    const match = g.area.match(/CIRCLE\s*\(\s*(-?\d+\.?\d*)\s+(-?\d+\.?\d*)\s*,\s*(-?\d+\.?\d*)\s*\)/i);
+                    if (match) {
+                        const lat = parseFloat(match[1]);
+                        const lng = parseFloat(match[2]);
+                        const rad = parseFloat(match[3]);
+                        L.circle([lat, lng], {
+                            color: '#ff0000',
+                            fillColor: '#ff0000',
+                            fillOpacity: 0.25,
+                            radius: rad
+                        }).bindTooltip(g.name, { permanent: false }).addTo(capaGeocercas);
+                    }
+                }
+            });
+        } catch (e) {
+            contenedor.innerHTML = '<p style="color: #ff0000;">Error al obtener las geocercas.</p>';
+        }
+    }
+
+    async function guardarGeocerca() {
+        const nombre = document.getElementById('geo-nombre').value.trim();
+        const desc = document.getElementById('geo-desc').value.trim();
+        const radio = parseFloat(document.getElementById('geo-radio').value);
+
+        if (!nombre) {
+            mostrarAlertaPersonalizada("Por favor ingrese un nombre para la geocerca.");
+            return;
+        }
+
+        if (isNaN(radio) || radio <= 0) {
+            mostrarAlertaPersonalizada("Por favor ingrese un radio válido en metros.");
+            return;
+        }
+
+        let lat = 4.60971, lng = -74.08175;
+        if (mapa) {
+            const center = mapa.getCenter();
+            lat = center.lat;
+            lng = center.lng;
+        }
+
+        const areaWKT = `CIRCLE (${lat} ${lng}, ${radio})`;
+
+        try {
+            const res = await fetch('https://whitecargps.duckdns.org/api/geofences', {
+                method: 'POST',
+                headers: {
+                    ...authHeaders(),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    name: nombre,
+                    description: desc,
+                    area: areaWKT
+                })
+            });
+
+            if (res.ok) {
+                const geofenceCreada = await res.json();
+                
+                if (dispositivoActualId) {
+                    await fetch('https://whitecargps.duckdns.org/api/permissions', {
+                        method: 'POST',
+                        headers: {
+                            ...authHeaders(),
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            deviceId: dispositivoActualId,
+                            geofenceId: geofenceCreada.id
+                        })
+                    });
+                }
+
+                document.getElementById('geo-nombre').value = '';
+                document.getElementById('geo-desc').value = '';
+                mostrarAlertaPersonalizada("Geocerca creada y asignada exitosamente.");
+                await cargarGeocercas();
+            } else {
+                mostrarAlertaPersonalizada("Error en el servidor al registrar la geocerca.");
+            }
+        } catch (e) {
+            mostrarAlertaPersonalizada("Error de conexión al guardar la geocerca.");
+        }
+    }
+
+    async function eliminarGeocerca(id) {
+        try {
+            const res = await fetch(`https://whitecargps.duckdns.org/api/geofences/${id}`, {
+                method: 'DELETE',
+                headers: authHeaders()
+            });
+
+            if (res.ok) {
+                mostrarAlertaPersonalizada("Geocerca eliminada.");
+                await cargarGeocercas();
+            } else {
+                mostrarAlertaPersonalizada("No se pudo eliminar la geocerca.");
+            }
+        } catch (e) {
+            mostrarAlertaPersonalizada("Error de conexión al eliminar la geocerca.");
+        }
+    }
+    
+    function abrirStreetView() {
+        if (!ultimaLatitud || !ultimaLongitud) {
+            mostrarAlertaPersonalizada("Ubicación del vehículo no disponible aún.");
+            return;
+        }
+        cerrarModales();
+        window.open(`https://maps.google.com/maps?layer=c&cbll=${ultimaLatitud},${ultimaLongitud}`, '_blank');
+    }
+
+    /* ==============================================
+       SISTEMA COMPLETO DE ALERTAS EAGLE TRACK GPS
+       ============================================== */
+
+    // Diccionario de explicaciones de tipos de eventos Eagle Track GPS
+    const EXPLICACIONES_NOTIFICACIONES = {
+        'ignitionOn': 'Notifica de inmediato en cuanto la llave de encendido pasa a posición ON o se arranca el motor.',
+        'ignitionOff': 'Notifica al instante cuando el motor es apagado o la llave es puesta en posición OFF.',
+        'deviceMoving': 'Alerta generada cuando el vehículo pasa de estado detenido a velocidad de movimiento detectada.',
+        'deviceStopped': 'Alerta cuando el vehículo detiene totalmente su marcha y permanece estacionado.',
+        'deviceOverspeed': 'Se dispara cuando la velocidad del vehículo supera el límite configurado.',
+        'geofenceEnter': 'Alerta cuando el vehículo ingresa al perímetro de una geocerca activa.',
+        'geofenceExit': 'Alerta de seguridad cuando el vehículo abandona una geocerca delimitada.',
+        'alarm': 'Alertas prioritarias: pánico SOS, corte de cables, desconexión de batería o sensor de vibración.',
+        'deviceOnline': 'Notifica cuando el equipo GPS restablece conexión y vuelve a transmitir datos.',
+        'deviceOffline': 'Alerta cuando el equipo GPS pierde cobertura o deja de reportar.',
+        'allEvents': 'Crea una regla para cada evento realmente disponible en el servidor Eagle Track GPS.'
+    };
+
+    const NOMBRES_NOTIFICACIONES = {
+        ignitionOn: 'Ignición ON (Motor Encendido)',
+        ignitionOff: 'Ignición OFF (Motor Apagado)',
+        deviceMoving: 'Vehículo en Movimiento',
+        deviceStopped: 'Vehículo Detenido',
+        deviceOverspeed: 'Exceso de Velocidad',
+        geofenceEnter: 'Entrada a Geocerca',
+        geofenceExit: 'Salida de Geocerca',
+        alarm: 'Alarma / SOS',
+        deviceOnline: 'Dispositivo En Línea',
+        deviceOffline: 'Dispositivo Fuera de Línea'
+    };
+
+    async function actualizarReglasWebRegistradas(listaExistente = null) {
+        let lista = listaExistente;
+
+        if (!lista) {
+            const response = await fetch(`${EAGLE_TRACK_API_ORIGIN}/api/notifications`, {
+                headers: authHeaders()
+            });
+            if (!response.ok) throw new Error('No se pudieron consultar las alertas Web.');
+            lista = await response.json();
+        }
+
+        const reglasWeb = lista.filter(item => {
+            const canales = String(item.notificators || '')
+                .split(',')
+                .map(canal => canal.trim());
+            return canales.includes('web');
+        });
+
+        tiposAlertasWebRegistradas = new Set(reglasWeb.map(item => item.type).filter(Boolean));
+        reglasAlertasWebConsultadas = true;
+        return reglasWeb;
+    }
+
+    function claveEventoAlerta(evento) {
+        return evento.id
+            ? `id:${evento.id}`
+            : [evento.type, evento.deviceId, evento.positionId, evento.eventTime || evento.serverTime || ''].join(':');
+    }
+
+    function obtenerNombreVehiculoEvento(evento) {
+        return dispositivosActuales[evento.deviceId]?.name
+            || evento.deviceName
+            || 'Vehículo';
+    }
+
+    function crearMensajeEvento(evento) {
+        const vehiculo = obtenerNombreVehiculoEvento(evento);
+        const mensajes = {
+            ignitionOn: `${vehiculo}: motor encendido.`,
+            ignitionOff: `${vehiculo}: motor apagado.`,
+            deviceMoving: `${vehiculo}: inició movimiento.`,
+            deviceStopped: `${vehiculo}: se detuvo.`,
+            deviceOverspeed: `${vehiculo}: excedió el límite de velocidad configurado.`,
+            geofenceEnter: `${vehiculo}: ingresó a una geocerca.`,
+            geofenceExit: `${vehiculo}: salió de una geocerca.`,
+            deviceOnline: `${vehiculo}: recuperó conexión con el servidor.`,
+            deviceOffline: `${vehiculo}: perdió conexión con el servidor.`,
+            alarm: `${vehiculo}: alarma ${evento.attributes?.alarm || 'detectada'}.`
+        };
+        return mensajes[evento.type] || `${vehiculo}: se registró el evento ${nombreLegibleEvento(evento.type)}.`;
+    }
+
+    function mostrarAlertaSobreMapa(evento) {
+        const contenedor = document.getElementById('alertas-mapa-container');
+        if (!contenedor) return;
+
+        const popup = document.createElement('div');
+        popup.className = 'alerta-mapa-popup';
+
+        const cabecera = document.createElement('div');
+        cabecera.className = 'alerta-mapa-cabecera';
+
+        const titulo = document.createElement('div');
+        titulo.className = 'alerta-mapa-titulo';
+        titulo.textContent = nombreLegibleEvento(evento.type);
+
+        const hora = document.createElement('div');
+        hora.className = 'alerta-mapa-hora';
+        const fechaEvento = new Date(evento.eventTime || evento.serverTime || Date.now());
+        hora.textContent = Number.isNaN(fechaEvento.getTime())
+            ? 'Ahora'
+            : fechaEvento.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+        const mensaje = document.createElement('div');
+        mensaje.className = 'alerta-mapa-mensaje';
+        mensaje.textContent = crearMensajeEvento(evento);
+
+        const cerrar = document.createElement('button');
+        cerrar.type = 'button';
+        cerrar.className = 'alerta-mapa-cerrar';
+        cerrar.setAttribute('aria-label', 'Cerrar alerta');
+        cerrar.textContent = '×';
+        cerrar.addEventListener('click', () => {
+            popup.classList.add('saliendo');
+            setTimeout(() => popup.remove(), 550);
+        });
+
+        cabecera.appendChild(titulo);
+        cabecera.appendChild(hora);
+        popup.appendChild(cerrar);
+        popup.appendChild(cabecera);
+        popup.appendChild(mensaje);
+        contenedor.prepend(popup);
+        contenedor.scrollTop = 0;
+    }
+
+    async function consultarEventosAlertasWeb() {
+        const mapaVisible = document.getElementById('pantalla-mapa').style.display !== 'none';
+        const idsDispositivos = Object.keys(dispositivosActuales);
+
+        if (!mapaVisible || !idsDispositivos.length || !tiposAlertasWebRegistradas.size || consultaAlertasEnCurso) {
+            return;
+        }
+
+        consultaAlertasEnCurso = true;
+
+        try {
+            const ahora = new Date();
+            const desde = ultimaConsultaAlertas || new Date(ahora.getTime() - 120000);
+            const hasta = new Date(ahora.getTime() + 5000);
+            const parametros = new URLSearchParams();
+
+            idsDispositivos.forEach(id => parametros.append('deviceId', id));
+            parametros.set('from', desde.toISOString());
+            parametros.set('to', hasta.toISOString());
+
+            const response = await fetch(`${EAGLE_TRACK_API_ORIGIN}/api/reports/events?${parametros.toString()}`, {
+                headers: authHeaders()
+            });
+            if (!response.ok) throw new Error(`Error consultando eventos (${response.status})`);
+
+            const eventos = await response.json();
+            eventos.sort((a, b) => new Date(a.eventTime || 0) - new Date(b.eventTime || 0));
+
+            if (!monitorAlertasInicializado) {
+                eventos.forEach(evento => eventosAlertasVistos.add(claveEventoAlerta(evento)));
+                monitorAlertasInicializado = true;
+            } else {
+                eventos.forEach(evento => {
+                    const clave = claveEventoAlerta(evento);
+                    if (eventosAlertasVistos.has(clave)) return;
+                    eventosAlertasVistos.add(clave);
+
+                    if (tiposAlertasWebRegistradas.has(evento.type)) {
+                        mostrarAlertaSobreMapa(evento);
+                    }
+                });
+            }
+
+            while (eventosAlertasVistos.size > 500) {
+                eventosAlertasVistos.delete(eventosAlertasVistos.values().next().value);
+            }
+
+            ultimaConsultaAlertas = new Date(ahora.getTime() - 15000);
+        } catch (error) {
+            console.warn('No se pudieron consultar las alertas recientes:', error);
+        } finally {
+            consultaAlertasEnCurso = false;
+        }
+    }
+
+    function actualizarDescripcionTipoNotificacion() {
+        const tipo = document.getElementById('notif-tipo').value;
+        const descBox = document.getElementById('notif-tipo-desc');
+        const extrasVel = document.getElementById('notif-extras-velocidad');
+
+        descBox.innerText = EXPLICACIONES_NOTIFICACIONES[tipo]
+            || 'El servidor enviará una alerta cuando ocurra este evento en el vehículo seleccionado.';
+
+        if (tipo === 'deviceOverspeed' || tipo === 'allEvents') {
+            extrasVel.style.display = 'block';
+        } else {
+            extrasVel.style.display = 'none';
+        }
+    }
+
+    async function abrirModalNotificaciones() {
+        document.getElementById('modal-notificaciones').style.display = 'flex';
+        actualizarDescripcionTipoNotificacion();
+        await cargarCanalesDisponibles();
+        await Promise.allSettled([
+            cargarTiposNotificacionDisponibles(),
+            cargarNotificacionesRegistradas(),
+            cargarResumenCanalesNativos()
+        ]);
+    }
+
+    async function cargarResumenCanalesNativos() {
+        const badge = document.getElementById('notif-estado-badge');
+
+        try {
+            const webActivo = canalesNativosDisponibles.has('web');
+
+            badge.className = webActivo
+                ? 'notif-badge-estado notif-badge-granted'
+                : 'notif-badge-estado notif-badge-denied';
+            badge.textContent = webActivo ? 'Activo' : 'No disponible';
+
+            actualizarDetalleCanal(
+                webActivo
+                    ? 'El canal Web está habilitado en el servidor.'
+                    : 'El canal Web no está habilitado en el servidor.',
+                webActivo ? 'ok' : 'error'
+            );
+        } catch (error) {
+            badge.className = 'notif-badge-estado notif-badge-denied';
+            badge.textContent = 'Error';
+            actualizarDetalleCanal(error.message || 'No se pudo consultar el canal Web.', 'error');
+        }
+    }
+
+    async function probarCanalNativo(canal) {
+        const boton = document.getElementById('btn-probar-web');
+
+        if (canal !== 'web' || !canalesNativosDisponibles.has('web')) {
+            actualizarDetalleCanal('El canal Web no está habilitado en el servidor.', 'error');
+            return;
+        }
+
+        boton.disabled = true;
+        boton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Probando...';
+
+        try {
+            const response = await fetch(`${EAGLE_TRACK_API_ORIGIN}/api/notifications/test/${canal}`, {
+                method: 'POST',
+                headers: authHeaders()
+            });
+
+            if (!response.ok) {
+                const detalle = await response.text();
+                throw new Error(`Prueba rechazada (${response.status})${detalle ? ': ' + detalle : ''}`);
+            }
+
+            actualizarDetalleCanal(
+                'Aviso Web de prueba aceptado. Se mostrará en una interfaz web conectada a esta cuenta.',
+                'ok'
+            );
+        } catch (error) {
+            actualizarDetalleCanal(error.message || `No se pudo probar el canal ${canal}.`, 'error');
+        } finally {
+            boton.disabled = false;
+            boton.innerHTML = '<i class="fas fa-desktop"></i> Probar Web';
+        }
+    }
+
+    function actualizarDetalleCanal(texto, tipo = '') {
+        const detalle = document.getElementById('notif-estado-detalle');
+        if (!detalle) return;
+        detalle.className = `notif-estado-detalle ${tipo}`.trim();
+        detalle.textContent = texto;
+    }
+
+    async function cargarCanalesDisponibles(mostrarResultado = false) {
+        let disponibles = new Set();
+
+        try {
+            const response = await fetch(`${EAGLE_TRACK_API_ORIGIN}/api/notifications/notificators`, {
+                headers: authHeaders()
+            });
+            if (!response.ok) throw new Error(`Estado ${response.status}`);
+            const datos = await response.json();
+            disponibles = new Set(datos.map(item => {
+                const valor = typeof item === 'string'
+                    ? item
+                    : item.type || item.id || item.name || '';
+                return String(valor).toLowerCase();
+            }).filter(Boolean));
+        } catch (error) {
+            console.warn('No se pudieron consultar los canales nativos:', error);
+        }
+
+        canalesNativosDisponibles = new Set(
+            ['web'].filter(canal => disponibles.has(canal))
+        );
+
+        document.querySelectorAll('.notif-canal-item[data-channel]').forEach(label => {
+            const canal = label.dataset.channel;
+            const input = label.querySelector('input[type="checkbox"]');
+            const activo = canalesNativosDisponibles.has(canal);
+            input.disabled = !activo;
+            label.classList.toggle('canal-no-disponible', !activo);
+            label.title = activo ? 'Canal disponible' : 'Canal no habilitado en el servidor';
+            if (!activo) input.checked = false;
+        });
+
+        const webInput = document.getElementById('notif-canal-web');
+        if (webInput && canalesNativosDisponibles.has('web')) webInput.checked = true;
+
+        const btnWeb = document.getElementById('btn-probar-web');
+        if (btnWeb) btnWeb.disabled = !canalesNativosDisponibles.has('web');
+
+        if (mostrarResultado) {
+            const nombres = Array.from(canalesNativosDisponibles).join(', ') || 'ninguno';
+            actualizarDetalleCanal(
+                `Canal Web habilitado: ${nombres === 'web' ? 'sí' : 'no'}.`,
+                canalesNativosDisponibles.size ? 'ok' : 'error'
+            );
+        }
+
+        return canalesNativosDisponibles;
+    }
+
+    function nombreLegibleEvento(tipo) {
+        if (NOMBRES_NOTIFICACIONES[tipo]) return NOMBRES_NOTIFICACIONES[tipo];
+        return tipo
+            .replace(/([a-z])([A-Z])/g, '$1 $2')
+            .replace(/^./, letra => letra.toUpperCase());
+    }
+
+    async function cargarTiposNotificacionDisponibles() {
+        const select = document.getElementById('notif-tipo');
+        if (!select) return;
+
+        const seleccionAnterior = select.value;
+
+        try {
+            const response = await fetch(`${EAGLE_TRACK_API_ORIGIN}/api/notifications/types`, {
+                headers: authHeaders()
+            });
+            if (!response.ok) throw new Error(`Estado ${response.status}`);
+
+            const datos = await response.json();
+            const tipos = datos.map(item => {
+                if (typeof item === 'string') return item;
+                return item.type || item.id || item.name || '';
+            }).map(String).filter(Boolean);
+
+            if (tipos.length) {
+                tiposNotificacionDisponibles = Array.from(new Set(tipos));
+            }
+        } catch (error) {
+            console.warn('No se pudieron consultar los eventos; se usa la lista compatible:', error);
+        }
+
+        select.innerHTML = '';
+        tiposNotificacionDisponibles.forEach(tipo => {
+            const option = document.createElement('option');
+            option.value = tipo;
+            option.textContent = nombreLegibleEvento(tipo);
+            select.appendChild(option);
+        });
+
+        const todos = document.createElement('option');
+        todos.value = 'allEvents';
+        todos.textContent = 'Todos los eventos disponibles';
+        select.appendChild(todos);
+
+        if ([...select.options].some(option => option.value === seleccionAnterior)) {
+            select.value = seleccionAnterior;
+        }
+        actualizarDescripcionTipoNotificacion();
+    }
+
+    async function configurarLimiteVelocidad(limiteKmh) {
+        if (!dispositivoActualId) {
+            throw new Error('No se ha detectado el vehículo para configurar su límite de velocidad.');
+        }
+
+        let dispositivo = dispositivosActuales[dispositivoActualId];
+        if (!dispositivo) {
+            const response = await fetch(`${EAGLE_TRACK_API_ORIGIN}/api/devices`, { headers: authHeaders() });
+            if (!response.ok) throw new Error('No se pudo consultar el vehículo.');
+            const dispositivos = await response.json();
+            dispositivo = dispositivos.find(item => item.id === dispositivoActualId);
+        }
+
+        if (!dispositivo) throw new Error('No se encontró el vehículo activo.');
+
+        const actualizado = {
+            ...dispositivo,
+            attributes: {
+                ...(dispositivo.attributes || {}),
+                speedLimit: limiteKmh / 1.852
+            }
+        };
+
+        const response = await fetch(`${EAGLE_TRACK_API_ORIGIN}/api/devices/${dispositivo.id}`, {
+            method: 'PUT',
+            headers: {
+                ...authHeaders(),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(actualizado)
+        });
+
+        if (!response.ok) {
+            throw new Error(`No se pudo guardar el límite de velocidad (${response.status}).`);
+        }
+
+        dispositivosActuales[dispositivo.id] = actualizado;
+        localStorage.setItem('eagle_limite_vel', String(limiteKmh));
+    }
+
+    async function crearReglaNotificacion(tipo, always, notificators) {
+        const response = await fetch(`${EAGLE_TRACK_API_ORIGIN}/api/notifications`, {
+            method: 'POST',
+            headers: {
+                ...authHeaders(),
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                type: tipo,
+                description: '',
+                always,
+                calendarId: 0,
+                commandId: 0,
+                notificators,
+                attributes: {}
+            })
+        });
+
+        if (!response.ok) {
+            const detalle = await response.text();
+            throw new Error(`No se pudo crear la alerta ${tipo} (${response.status})${detalle ? ': ' + detalle : ''}`);
+        }
+
+        const creada = await response.json();
+
+        if (dispositivoActualId && creada.id) {
+            const permiso = await fetch(`${EAGLE_TRACK_API_ORIGIN}/api/permissions`, {
+                method: 'POST',
+                headers: {
+                    ...authHeaders(),
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    deviceId: dispositivoActualId,
+                    notificationId: creada.id
+                })
+            });
+
+            if (!permiso.ok) {
+                throw new Error(`La alerta fue creada, pero no pudo asociarse al vehículo (${permiso.status}).`);
+            }
+        }
+
+        return creada;
+    }
+
+    // Guardar notificación en el servidor Eagle Track GPS
+    async function guardarNotificacionEagleTrack() {
+        const btnGuardar = document.getElementById('btn-guardar-alerta');
+        const tipo = document.getElementById('notif-tipo').value;
+        const always = document.getElementById('notif-always').checked;
+        const limiteVel = parseFloat(document.getElementById('notif-limite-vel')?.value);
+
+        if (!dispositivoActualId) {
+            mostrarAlertaPersonalizada("Espera a que Eagle Track GPS detecte el vehículo antes de crear la alerta.");
+            return;
+        }
+
+        // Recolectar canales activos
+        const canales = [];
+        const canalesConfigurables = ['web'];
+        canalesConfigurables.forEach(canal => {
+            const input = document.getElementById(`notif-canal-${canal}`);
+            if (input?.checked && !input.disabled) canales.push(canal);
+        });
+
+        if (canales.length === 0) {
+            mostrarAlertaPersonalizada("Selecciona al menos un canal habilitado por el servidor.");
+            return;
+        }
+
+        const incluyeSobrevelocidad = tipo === 'deviceOverspeed'
+            || (tipo === 'allEvents' && tiposNotificacionDisponibles.includes('deviceOverspeed'));
+        if (incluyeSobrevelocidad && (!Number.isFinite(limiteVel) || limiteVel < 10 || limiteVel > 250)) {
+            mostrarAlertaPersonalizada("Ingresa un límite de velocidad válido entre 10 y 250 km/h.");
+            return;
+        }
+
+        btnGuardar.disabled = true;
+        btnGuardar.style.opacity = '0.65';
+        btnGuardar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> GUARDANDO ALERTA...';
+        actualizarDetalleCanal('Validando el canal Web y guardando la regla en el servidor...');
+
+        try {
+            if (incluyeSobrevelocidad) {
+                await configurarLimiteVelocidad(limiteVel);
+            }
+
+            const tipos = tipo === 'allEvents'
+                ? tiposNotificacionDisponibles
+                : [tipo];
+
+            for (const tipoActual of tipos) {
+                await crearReglaNotificacion(tipoActual, always, canales.join(','));
+            }
+
+            await cargarNotificacionesRegistradas();
+            mostrarAlertaPersonalizada(
+                tipos.length === 1
+                    ? "Regla de notificación creada y asociada al vehículo correctamente."
+                    : `${tipos.length} reglas de notificación fueron creadas y asociadas al vehículo.`
+            );
+        } catch (error) {
+            console.error('Error guardando la regla de notificación:', error);
+            mostrarAlertaPersonalizada(error.message || "Error de conexión al guardar la notificación en el servidor.");
+        } finally {
+            btnGuardar.disabled = false;
+            btnGuardar.style.opacity = '1';
+            btnGuardar.innerHTML = '<i class="fas fa-save"></i> GUARDAR Y ACTIVAR ALERTA EN SERVIDOR';
+        }
+    }
+
+    // Cargar y mostrar lista de notificaciones configuradas en Eagle Track GPS
+    async function cargarNotificacionesRegistradas() {
+        const contenedor = document.getElementById('lista-notificaciones-servidor');
+        if (!contenedor) return;
+        contenedor.innerHTML = '<p style="color: #ccc;">Cargando reglas...</p>';
+
+        try {
+            const lista = await actualizarReglasWebRegistradas();
+            contenedor.innerHTML = '';
+
+            if (!lista || lista.length === 0) {
+                contenedor.innerHTML = '<p style="color: #888;">No hay reglas de alerta configuradas aún.</p>';
+                return;
+            }
+
+            lista.forEach(item => {
+                let canales = item.notificators ? item.notificators.toUpperCase() : 'WEB';
+                const nombreTipo = item.type ? nombreLegibleEvento(item.type) : 'Evento';
+                const card = document.createElement('div');
+                card.className = 'notif-item-card';
+                card.innerHTML = `
+                    <div style="flex-grow: 1;">
+                        <strong style="color: #ff0000; font-size: 12px; display: block;">
+                            <i class="fas fa-bell"></i> ${nombreTipo}
+                        </strong>
+                        <div style="font-size: 10px; color: #aaa; margin-top: 2px;">
+                            Canales: <span style="color:#00ff66;">${canales}</span> | ${item.always ? '24/7' : 'Sesión'}
+                        </div>
+                    </div>
+                    <button onclick="eliminarNotificacionEagleTrack(${item.id})" style="background: #ff0000; color: #fff; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer;" title="Eliminar regla">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                `;
+                contenedor.appendChild(card);
+            });
+        } catch (e) {
+            contenedor.innerHTML = '<p style="color: #ff0000;">Error al obtener notificaciones del servidor.</p>';
+        }
+    }
+
+    async function eliminarNotificacionEagleTrack(id) {
+        try {
+            const res = await fetch(`https://whitecargps.duckdns.org/api/notifications/${id}`, {
+                method: 'DELETE',
+                headers: authHeaders()
+            });
+
+            if (res.ok) {
+                mostrarAlertaPersonalizada("Regla de notificación eliminada.");
+                await cargarNotificacionesRegistradas();
+            } else {
+                mostrarAlertaPersonalizada("No se pudo eliminar la notificación en el servidor.");
+            }
+        } catch (e) {
+            mostrarAlertaPersonalizada("Error de conexión al eliminar la regla.");
+        }
+    }
+
+    console.log('EAGLE TRACK GPS CARGADO CORRECTAMENTE');  
+</script>
+</body>
+</html>
