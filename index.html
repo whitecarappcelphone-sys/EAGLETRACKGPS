@@ -7,11 +7,11 @@
     
     <!-- LIBRERÍAS EXTERNAS AL PRINCIPIO -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.css" />
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.js"></script>
+    <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
 
 <style>
 /* ================================
@@ -446,11 +446,63 @@ html, body {
     width: min(68vw, 270px);
     max-height: 170px;
     overflow-y: auto;
+    display: block;
+    pointer-events: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #ff0000 rgba(0, 0, 0, 0.35);
+}
+
+#alertas-mapa-container:empty {
+    display: none;
+}
+
+#alertas-mapa-container.cerrando {
+    animation: panelAlertasSalida 0.5s ease-in forwards;
+}
+
+.alertas-mapa-panel {
+    overflow: hidden;
+    border: 1px solid rgba(255, 0, 0, 0.65);
+    border-radius: 10px;
+    background: rgba(7, 6, 6, 0.94);
+    box-shadow: 0 0 12px rgba(255, 0, 0, 0.4), 0 6px 18px rgba(0, 0, 0, 0.72);
+    backdrop-filter: blur(7px);
+    animation: alertaMapaEntrada 0.38s ease-out both;
+}
+
+.alertas-mapa-panel-cabecera {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 7px 8px 6px 10px;
+    border-bottom: 1px solid rgba(255, 0, 0, 0.35);
+    color: #ff0000;
+    font-size: 10px;
+    font-weight: bold;
+    letter-spacing: 0.6px;
+}
+
+.alertas-mapa-panel-cerrar {
+    width: 21px;
+    height: 21px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.alertas-mapa-panel-cerrar:hover { color: #ff0000; }
+
+.alertas-mapa-lista {
+    max-height: 135px;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    padding-right: 3px;
-    pointer-events: none;
+    gap: 6px;
+    padding: 7px;
     scrollbar-width: thin;
     scrollbar-color: #ff0000 rgba(0, 0, 0, 0.35);
 }
@@ -465,12 +517,10 @@ html, body {
     padding: 8px 10px;
     border: 1px solid #ff0000;
     border-left: 3px solid #ff0000;
-    border-radius: 8px;
-    background: rgba(10, 8, 8, 0.95);
+    border-radius: 7px;
+    background: rgba(16, 11, 11, 0.94);
     color: #ffffff;
-    box-shadow: 0 0 9px rgba(255, 0, 0, 0.42), 0 4px 13px rgba(0, 0, 0, 0.68);
-    backdrop-filter: blur(7px);
-    animation: alertaMapaEntrada 0.38s ease-out both;
+    box-shadow: 0 3px 9px rgba(0, 0, 0, 0.6);
 }
 
 .alerta-mapa-popup.saliendo {
@@ -538,6 +588,11 @@ html, body {
     to { opacity: 0; transform: translateX(55px); max-height: 0; padding-top: 0; padding-bottom: 0; margin: 0; }
 }
 
+@keyframes panelAlertasSalida {
+    from { opacity: 1; transform: translateX(0) scale(1); }
+    to { opacity: 0; transform: translateX(55px) scale(0.96); }
+}
+
 /* Estilos visuales para las nuevas capas de mapa. */
 .leaflet-tile.capa-google-oscura {
     filter: invert(1) hue-rotate(180deg) brightness(0.78) contrast(1.18) saturate(0.72);
@@ -550,6 +605,14 @@ html, body {
 .leaflet-tile.capa-relieve-sombras {
     mix-blend-mode: multiply;
     filter: contrast(1.3) brightness(0.88);
+}
+
+.leaflet-tile.capa-nocturna-movil {
+    filter: grayscale(1) invert(0.9) sepia(1) saturate(7) hue-rotate(305deg) brightness(0.33) contrast(1.5);
+}
+
+.leaflet-tile.capa-3d-respaldo {
+    filter: saturate(0.86) contrast(1.05) brightness(0.95);
 }
 
 /* ================================
@@ -817,6 +880,36 @@ html, body {
     align-items: center;
     text-align: left;
     gap: 8px;
+}
+
+.notif-evento-card {
+    cursor: pointer;
+    transition: border-color 0.2s ease, background 0.2s ease, transform 0.15s ease;
+}
+
+.notif-evento-card:hover {
+    border-color: #ff0000;
+    background: #160909;
+    transform: translateY(-1px);
+}
+
+.notif-evento-fecha {
+    margin-top: 3px;
+    color: #ffffff;
+    font-size: 10px;
+}
+
+.notif-evento-direccion {
+    margin-top: 4px;
+    color: #bdbdbd;
+    font-size: 10px;
+    line-height: 1.3;
+}
+
+.notif-evento-canal {
+    color: #00ff66;
+    font-size: 9px;
+    font-weight: bold;
 }
 .notif-desc-box {
     background: rgba(255, 0, 0, 0.08);
@@ -1141,7 +1234,7 @@ html, body {
             </div>
 
             <p style="font-size: 11px; color: #ccc; margin: 4px 0 10px 0; line-height: 1.3;">
-                Las alertas Web son generadas por el servidor y aparecen en una interfaz web conectada con esta misma cuenta.
+                Las alertas Web son generadas por el servidor y aparecen dentro de Eagle Track GPS mientras esta cuenta está conectada.
             </p>
 
             <div id="notif-estado-detalle" class="notif-estado-detalle">
@@ -1237,6 +1330,7 @@ html, body {
     let mapaWebGL = null;
     let marcadorWebGL = null;
     let modoWebGLActual = null;
+    let temporizadorCargaWebGL = null;
     let estiloMapaActual = 'satelite'; 
     let marcadoresVehiculos = {};
     let marcadoresSonar = {};
@@ -1264,6 +1358,10 @@ html, body {
     let consultaAlertasEnCurso = false;
     let ultimaConsultaAlertas = null;
     let reglasAlertasWebConsultadas = false;
+    let cachePosicionesAlertas = new Map();
+    let cacheDireccionesAlertas = new Map();
+    let alertasMapaCerradas = false;
+    let panelAlertasInicialCargado = false;
 
     const EAGLE_TRACK_API_ORIGIN = 'https://whitecargps.duckdns.org';
 
@@ -1365,10 +1463,12 @@ html, body {
 
             if (!reglasAlertasWebConsultadas) {
                 reglasAlertasWebConsultadas = true;
-                actualizarReglasWebRegistradas().catch(error => {
-                    reglasAlertasWebConsultadas = false;
-                    console.warn('No se pudieron cargar las reglas Web:', error);
-                });
+                actualizarReglasWebRegistradas()
+                    .then(() => cargarAlertasPersistentesMapa())
+                    .catch(error => {
+                        reglasAlertasWebConsultadas = false;
+                        console.warn('No se pudieron cargar las reglas Web:', error);
+                    });
             }
 
             for (const dispositivo of dispositivos) {
@@ -1390,6 +1490,8 @@ html, body {
             if (!posicionEncontrada) {
                 const textoCarga = document.getElementById('map-loading-texto');
                 if (textoCarga) textoCarga.textContent = 'Esperando señal del vehículo';
+            } else if (reglasAlertasWebConsultadas && !panelAlertasInicialCargado && !alertasMapaCerradas) {
+                cargarAlertasPersistentesMapa();
             }
         } catch (error) {
             if (resultado) resultado.innerText = 'ERROR: ' + error;
@@ -1414,6 +1516,10 @@ html, body {
             marcadorWebGL = null;
             modoWebGLActual = null;
         }
+        if (temporizadorCargaWebGL) {
+            clearTimeout(temporizadorCargaWebGL);
+            temporizadorCargaWebGL = null;
+        }
         document.getElementById('mapa-webgl').style.display = 'none';
         document.getElementById('mapa-webgl').innerHTML = '';
         contenedor.style.display = 'block';
@@ -1426,6 +1532,10 @@ html, body {
         eventosAlertasVistos = new Set();
         monitorAlertasInicializado = false;
         ultimaConsultaAlertas = null;
+        cachePosicionesAlertas = new Map();
+        cacheDireccionesAlertas = new Map();
+        alertasMapaCerradas = false;
+        panelAlertasInicialCargado = false;
 
         const alertasMapa = document.getElementById('alertas-mapa-container');
         if (alertasMapa) alertasMapa.innerHTML = '';
@@ -1464,15 +1574,15 @@ html, body {
 
         if (estilo === 'satelite') {
             const imagen = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                maxNativeZoom: 19,
-                maxZoom: 24,
+                maxNativeZoom: 23,
+                maxZoom: 26,
                 keepBuffer: 4,
                 updateWhenZooming: false,
                 attribution: '&copy; Esri World Imagery'
             });
             const referencias = L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
                 maxNativeZoom: 19,
-                maxZoom: 24,
+                maxZoom: 26,
                 opacity: 0.92,
                 attribution: '&copy; Esri'
             });
@@ -1498,6 +1608,11 @@ html, body {
         const contenedorWebGL = document.getElementById('mapa-webgl');
         const contenedorLeaflet = document.getElementById('mapa2');
 
+        if (temporizadorCargaWebGL) {
+            clearTimeout(temporizadorCargaWebGL);
+            temporizadorCargaWebGL = null;
+        }
+
         if (mapaWebGL) {
             mapaWebGL.remove();
             mapaWebGL = null;
@@ -1516,6 +1631,13 @@ html, body {
         const contenedorWebGL = document.getElementById('mapa-webgl');
         const contenedorLeaflet = document.getElementById('mapa2');
 
+        if (!window.maplibregl || !maplibregl.supported()) {
+            activarMapaRasterRespaldo(modo);
+            return;
+        }
+
+        if (temporizadorCargaWebGL) clearTimeout(temporizadorCargaWebGL);
+
         if (mapaWebGL) mapaWebGL.remove();
         mapaWebGL = null;
         marcadorWebGL = null;
@@ -1532,22 +1654,34 @@ html, body {
         const opciones = {
             container: 'mapa-webgl',
             style: modo === 'oscuro'
-                ? 'https://tiles.openfreemap.org/styles/fiord'
+                ? crearEstiloNocturnoRojo()
                 : 'https://tiles.openfreemap.org/styles/liberty',
             center: centro,
-            zoom: modo === 'relieve3d' ? 18.2 : 15.5,
-            pitch: modo === 'relieve3d' ? 76 : 0,
+            zoom: modo === 'relieve3d' ? 17.4 : 15.5,
+            pitch: modo === 'relieve3d' ? 70 : 0,
             bearing: 0,
             maxZoom: 22,
             maxPitch: 85,
             canvasContextAttributes: { antialias: true }
         };
 
-        mapaWebGL = new maplibregl.Map(opciones);
+        try {
+            mapaWebGL = new maplibregl.Map(opciones);
+        } catch (error) {
+            console.warn('WebGL no disponible; usando mapa móvil de respaldo:', error);
+            activarMapaRasterRespaldo(modo);
+            return;
+        }
         mapaWebGL.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'bottom-right');
 
+        temporizadorCargaWebGL = setTimeout(() => {
+            if (modoWebGLActual === modo) {
+                console.warn('El mapa WebGL tardó demasiado; activando respaldo móvil.');
+                activarMapaRasterRespaldo(modo);
+            }
+        }, 9000);
+
         mapaWebGL.on('load', () => {
-            if (modo === 'oscuro') configurarEstiloNocturnoRojo();
             if (modo === 'relieve3d') configurarConduccion3D();
 
             if (ultimaLatitud && ultimaLongitud) {
@@ -1558,80 +1692,183 @@ html, body {
                 });
             }
         });
-    }
 
-    function configurarEstiloNocturnoRojo() {
-        if (!mapaWebGL) return;
-
-        mapaWebGL.getStyle().layers.forEach(capa => {
-            try {
-                const id = capa.id.toLowerCase();
-                if (capa.type === 'line' && /(road|street|highway|transport|bridge|tunnel)/.test(id)) {
-                    const color = /(motorway|trunk|primary)/.test(id) ? '#ff2038' : '#8f1324';
-                    mapaWebGL.setPaintProperty(capa.id, 'line-color', color);
-                    mapaWebGL.setPaintProperty(capa.id, 'line-opacity', 0.92);
-                }
-                if (capa.type === 'symbol' && capa.layout?.['text-field']) {
-                    mapaWebGL.setPaintProperty(capa.id, 'text-color', '#ffffff');
-                    mapaWebGL.setPaintProperty(capa.id, 'text-halo-color', '#050505');
-                    mapaWebGL.setPaintProperty(capa.id, 'text-halo-width', 1.3);
-                }
-            } catch (error) {
-                console.debug('Capa nocturna sin ajuste:', capa.id);
+        mapaWebGL.once('idle', () => {
+            if (temporizadorCargaWebGL) {
+                clearTimeout(temporizadorCargaWebGL);
+                temporizadorCargaWebGL = null;
             }
         });
+
+        mapaWebGL.on('error', error => {
+            console.warn('Error cargando el mapa WebGL:', error.error || error);
+        });
+    }
+
+    function activarMapaRasterRespaldo(modo) {
+        if (temporizadorCargaWebGL) {
+            clearTimeout(temporizadorCargaWebGL);
+            temporizadorCargaWebGL = null;
+        }
+        if (mapaWebGL) {
+            mapaWebGL.remove();
+            mapaWebGL = null;
+        }
+        marcadorWebGL = null;
+        modoWebGLActual = null;
+
+        const contenedorWebGL = document.getElementById('mapa-webgl');
+        const contenedorLeaflet = document.getElementById('mapa2');
+        contenedorWebGL.style.display = 'none';
+        contenedorWebGL.classList.remove('modo-conduccion');
+        contenedorWebGL.innerHTML = '';
+        contenedorLeaflet.style.display = 'block';
+        if (mapa) mapa.invalidateSize();
+
+        if (capaMapa && mapa.hasLayer(capaMapa)) mapa.removeLayer(capaMapa);
+
+        if (modo === 'oscuro') {
+            capaMapa = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxNativeZoom: 19,
+                maxZoom: 22,
+                className: 'capa-nocturna-movil',
+                attribution: '&copy; OpenStreetMap'
+            });
+        } else {
+            const calles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxNativeZoom: 19,
+                maxZoom: 22,
+                className: 'capa-3d-respaldo',
+                attribution: '&copy; OpenStreetMap'
+            });
+            const relieve = L.tileLayer('https://services.arcgisonline.com/arcgis/rest/services/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}', {
+                maxNativeZoom: 16,
+                maxZoom: 22,
+                opacity: 0.32,
+                className: 'capa-relieve-sombras',
+                attribution: '&copy; Esri'
+            });
+            capaMapa = L.layerGroup([calles, relieve]);
+        }
+
+        capaMapa.addTo(mapa);
+        estiloMapaActual = modo;
+        if (ultimaLatitud && ultimaLongitud) mapa.setView([ultimaLatitud, ultimaLongitud], 18);
+    }
+
+    function crearEstiloNocturnoRojo() {
+        const nombre = ['coalesce', ['get', 'name:latin'], ['get', 'name']];
+        return {
+            version: 8,
+            sources: {
+                openmaptiles: {
+                    type: 'vector',
+                    url: 'https://tiles.openfreemap.org/planet'
+                }
+            },
+            glyphs: 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf',
+            layers: [
+                { id: 'fondo', type: 'background', paint: { 'background-color': '#050506' } },
+                {
+                    id: 'zonas-residenciales', type: 'fill', source: 'openmaptiles', 'source-layer': 'landuse',
+                    filter: ['==', ['get', 'class'], 'residential'],
+                    paint: { 'fill-color': '#0d0d10', 'fill-opacity': 0.78 }
+                },
+                {
+                    id: 'parques', type: 'fill', source: 'openmaptiles', 'source-layer': 'park',
+                    paint: { 'fill-color': '#0a1610', 'fill-opacity': 0.82 }
+                },
+                {
+                    id: 'agua', type: 'fill', source: 'openmaptiles', 'source-layer': 'water',
+                    paint: { 'fill-color': '#07131d' }
+                },
+                {
+                    id: 'edificios', type: 'fill', source: 'openmaptiles', 'source-layer': 'building', minzoom: 13,
+                    paint: { 'fill-color': '#18181c', 'fill-outline-color': '#2a2023', 'fill-opacity': 0.78 }
+                },
+                {
+                    id: 'vias-menores', type: 'line', source: 'openmaptiles', 'source-layer': 'transportation', minzoom: 11,
+                    filter: ['match', ['get', 'class'], ['minor', 'service', 'track', 'path'], true, false],
+                    layout: { 'line-cap': 'round', 'line-join': 'round' },
+                    paint: {
+                        'line-color': '#68101c',
+                        'line-opacity': 0.86,
+                        'line-width': ['interpolate', ['linear'], ['zoom'], 11, 0.35, 16, 0.8, 21, 1.8]
+                    }
+                },
+                {
+                    id: 'vias-principales', type: 'line', source: 'openmaptiles', 'source-layer': 'transportation', minzoom: 6,
+                    filter: ['match', ['get', 'class'], ['primary', 'secondary', 'tertiary', 'trunk'], true, false],
+                    layout: { 'line-cap': 'round', 'line-join': 'round' },
+                    paint: {
+                        'line-color': '#be1629',
+                        'line-opacity': 0.94,
+                        'line-width': ['interpolate', ['linear'], ['zoom'], 6, 0.45, 14, 1.1, 21, 2.6]
+                    }
+                },
+                {
+                    id: 'autopistas', type: 'line', source: 'openmaptiles', 'source-layer': 'transportation', minzoom: 5,
+                    filter: ['==', ['get', 'class'], 'motorway'],
+                    layout: { 'line-cap': 'round', 'line-join': 'round' },
+                    paint: {
+                        'line-color': '#ff263d',
+                        'line-opacity': 0.96,
+                        'line-width': ['interpolate', ['linear'], ['zoom'], 5, 0.65, 14, 1.45, 21, 3.1]
+                    }
+                },
+                {
+                    id: 'nombres-vias', type: 'symbol', source: 'openmaptiles', 'source-layer': 'transportation_name', minzoom: 12,
+                    layout: {
+                        'symbol-placement': 'line',
+                        'text-field': nombre,
+                        'text-font': ['Noto Sans Regular'],
+                        'text-size': ['interpolate', ['linear'], ['zoom'], 12, 9, 18, 12],
+                        'symbol-spacing': 350
+                    },
+                    paint: { 'text-color': '#ffffff', 'text-halo-color': '#050506', 'text-halo-width': 1.4 }
+                },
+                {
+                    id: 'nombres-lugares', type: 'symbol', source: 'openmaptiles', 'source-layer': 'place', minzoom: 4,
+                    filter: ['match', ['get', 'class'], ['city', 'town', 'village', 'suburb', 'neighbourhood'], true, false],
+                    layout: {
+                        'text-field': nombre,
+                        'text-font': ['Noto Sans Regular'],
+                        'text-size': ['interpolate', ['linear'], ['zoom'], 5, 10, 15, 13],
+                        'text-max-width': 8
+                    },
+                    paint: { 'text-color': '#f5f5f5', 'text-halo-color': '#050506', 'text-halo-width': 1.5 }
+                }
+            ]
+        };
     }
 
     function configurarConduccion3D() {
         if (!mapaWebGL) return;
 
-        if (!mapaWebGL.getSource('terreno-egps')) {
-            mapaWebGL.addSource('terreno-egps', {
-                type: 'raster-dem',
-                url: 'https://tiles.mapterhorn.com/tilejson.json'
-            });
-            mapaWebGL.setTerrain({ source: 'terreno-egps', exaggeration: 1.35 });
-            mapaWebGL.addLayer({
-                id: 'sombras-terreno-egps',
-                type: 'hillshade',
-                source: 'terreno-egps',
-                paint: {
-                    'hillshade-shadow-color': '#17100b',
-                    'hillshade-highlight-color': '#fff0cc',
-                    'hillshade-exaggeration': 0.45
-                }
-            });
-        }
-
-        if (!mapaWebGL.getSource('edificios-egps')) {
-            mapaWebGL.addSource('edificios-egps', {
-                type: 'vector',
-                url: 'https://tiles.openfreemap.org/planet'
-            });
-
+        if (!mapaWebGL.getLayer('edificios-3d-egps')) {
             const capaEtiquetas = mapaWebGL.getStyle().layers.find(capa =>
                 capa.type === 'symbol' && capa.layout?.['text-field']
             )?.id;
 
             mapaWebGL.addLayer({
                 id: 'edificios-3d-egps',
-                source: 'edificios-egps',
+                source: 'openmaptiles',
                 'source-layer': 'building',
                 type: 'fill-extrusion',
-                minzoom: 15,
+                minzoom: 14.5,
                 filter: ['!=', ['get', 'hide_3d'], true],
                 paint: {
                     'fill-extrusion-color': [
                         'interpolate', ['linear'], ['coalesce', ['get', 'render_height'], 8],
-                        0, '#d9d6cf', 60, '#9aa7b4', 180, '#647587'
+                        0, '#e2ded6', 35, '#b8c1c9', 120, '#738596'
                     ],
                     'fill-extrusion-height': [
                         'interpolate', ['linear'], ['zoom'],
-                        15, 0,
-                        16, ['coalesce', ['get', 'render_height'], 8]
+                        14.5, 0,
+                        15.5, ['coalesce', ['get', 'render_height'], 8]
                     ],
                     'fill-extrusion-base': ['coalesce', ['get', 'render_min_height'], 0],
-                    'fill-extrusion-opacity': 0.88
+                    'fill-extrusion-opacity': 0.94
                 }
             }, capaEtiquetas);
         }
@@ -1665,10 +1902,10 @@ html, body {
         if (modoWebGLActual === 'relieve3d') {
             mapaWebGL.easeTo({
                 center: coordenadas,
-                zoom: Math.max(mapaWebGL.getZoom(), 18.2),
-                pitch: 76,
+                zoom: Math.max(mapaWebGL.getZoom(), 17.4),
+                pitch: 70,
                 bearing: Number.isFinite(Number(posicion.course)) ? Number(posicion.course) : mapaWebGL.getBearing(),
-                offset: [0, 125],
+                offset: [0, 105],
                 duration: 950
             });
         }
@@ -1915,8 +2152,8 @@ html, body {
         if (mapaWebGL && ultimaLatitud && ultimaLongitud) {
             mapaWebGL.easeTo({
                 center: [ultimaLongitud, ultimaLatitud],
-                zoom: modoWebGLActual === 'relieve3d' ? 18.2 : 17,
-                pitch: modoWebGLActual === 'relieve3d' ? 76 : 0,
+                zoom: modoWebGLActual === 'relieve3d' ? 17.4 : 17,
+                pitch: modoWebGLActual === 'relieve3d' ? 70 : 0,
                 duration: 900
             });
             return;
@@ -1959,6 +2196,10 @@ html, body {
             marcadorWebGL = null;
             modoWebGLActual = null;
         }
+        if (temporizadorCargaWebGL) {
+            clearTimeout(temporizadorCargaWebGL);
+            temporizadorCargaWebGL = null;
+        }
         
         marcadoresVehiculos = {};
         marcadoresSonar = {};
@@ -1972,6 +2213,10 @@ html, body {
         monitorAlertasInicializado = false;
         ultimaConsultaAlertas = null;
         reglasAlertasWebConsultadas = false;
+        cachePosicionesAlertas = new Map();
+        cacheDireccionesAlertas = new Map();
+        alertasMapaCerradas = false;
+        panelAlertasInicialCargado = false;
 
         const alertasMapa = document.getElementById('alertas-mapa-container');
         if (alertasMapa) alertasMapa.innerHTML = '';
@@ -2312,9 +2557,144 @@ html, body {
         return mensajes[evento.type] || `${vehiculo}: se registró el evento ${nombreLegibleEvento(evento.type)}.`;
     }
 
-    function mostrarAlertaSobreMapa(evento) {
+    async function obtenerPosicionEvento(evento) {
+        if (Number.isFinite(Number(evento.latitude)) && Number.isFinite(Number(evento.longitude))) {
+            return {
+                latitude: Number(evento.latitude),
+                longitude: Number(evento.longitude),
+                address: evento.address || evento.attributes?.address || null
+            };
+        }
+
+        if (!evento.positionId) return null;
+
+        const clave = String(evento.positionId);
+        if (!cachePosicionesAlertas.has(clave)) {
+            const consulta = fetch(`${EAGLE_TRACK_API_ORIGIN}/api/positions?id=${evento.positionId}`, {
+                headers: authHeaders()
+            }).then(async response => {
+                if (!response.ok) return null;
+                const posiciones = await response.json();
+                const posicion = posiciones[0];
+                if (!posicion) return null;
+                return {
+                    latitude: Number(posicion.latitude),
+                    longitude: Number(posicion.longitude),
+                    address: posicion.address || null
+                };
+            }).catch(() => null);
+            cachePosicionesAlertas.set(clave, consulta);
+        }
+
+        return cachePosicionesAlertas.get(clave);
+    }
+
+    async function obtenerDetalleUbicacionEvento(evento) {
+        const posicion = await obtenerPosicionEvento(evento);
+        if (!posicion || !Number.isFinite(posicion.latitude) || !Number.isFinite(posicion.longitude)) return null;
+
+        const claveDireccion = `${posicion.latitude.toFixed(5)},${posicion.longitude.toFixed(5)}`;
+        if (posicion.address) {
+            return { ...posicion, direccion: posicion.address };
+        }
+
+        if (!cacheDireccionesAlertas.has(claveDireccion)) {
+            const consulta = obtenerNombreLugar(posicion.latitude, posicion.longitude)
+                .catch(() => 'Ubicación desconocida');
+            cacheDireccionesAlertas.set(claveDireccion, consulta);
+        }
+
+        const direccion = await cacheDireccionesAlertas.get(claveDireccion);
+        return {
+            ...posicion,
+            direccion: direccion || `${posicion.latitude.toFixed(6)}, ${posicion.longitude.toFixed(6)}`
+        };
+    }
+
+    async function obtenerEventosWebRecientes(dias = 7, limite = 12) {
+        const idsDispositivos = Object.keys(dispositivosActuales);
+        if (!idsDispositivos.length || !tiposAlertasWebRegistradas.size) return [];
+
+        const ahora = new Date();
+        const desde = new Date(ahora.getTime() - dias * 24 * 60 * 60 * 1000);
+        const parametros = new URLSearchParams();
+        idsDispositivos.forEach(id => parametros.append('deviceId', id));
+        parametros.set('from', desde.toISOString());
+        parametros.set('to', ahora.toISOString());
+
+        const response = await fetch(`${EAGLE_TRACK_API_ORIGIN}/api/reports/events?${parametros.toString()}`, {
+            headers: authHeaders()
+        });
+        if (!response.ok) throw new Error(`No se pudieron consultar los eventos (${response.status}).`);
+
+        return (await response.json())
+            .filter(evento => tiposAlertasWebRegistradas.has(evento.type))
+            .sort((a, b) => new Date(b.eventTime || b.serverTime || 0) - new Date(a.eventTime || a.serverTime || 0))
+            .slice(0, limite);
+    }
+
+    function obtenerListaPanelAlertasMapa() {
         const contenedor = document.getElementById('alertas-mapa-container');
-        if (!contenedor) return;
+        if (!contenedor || alertasMapaCerradas) return null;
+
+        let panel = contenedor.querySelector('.alertas-mapa-panel');
+        if (!panel) {
+            panel = document.createElement('div');
+            panel.className = 'alertas-mapa-panel';
+
+            const cabecera = document.createElement('div');
+            cabecera.className = 'alertas-mapa-panel-cabecera';
+
+            const titulo = document.createElement('span');
+            titulo.textContent = 'ALERTAS WEB';
+
+            const cerrar = document.createElement('button');
+            cerrar.type = 'button';
+            cerrar.className = 'alertas-mapa-panel-cerrar';
+            cerrar.setAttribute('aria-label', 'Cerrar alertas');
+            cerrar.textContent = '×';
+            cerrar.addEventListener('click', () => {
+                alertasMapaCerradas = true;
+                contenedor.classList.add('cerrando');
+                setTimeout(() => {
+                    contenedor.innerHTML = '';
+                    contenedor.classList.remove('cerrando');
+                }, 500);
+            });
+
+            const lista = document.createElement('div');
+            lista.className = 'alertas-mapa-lista';
+
+            cabecera.appendChild(titulo);
+            cabecera.appendChild(cerrar);
+            panel.appendChild(cabecera);
+            panel.appendChild(lista);
+            contenedor.appendChild(panel);
+        }
+
+        return panel.querySelector('.alertas-mapa-lista');
+    }
+
+    async function cargarAlertasPersistentesMapa() {
+        if (alertasMapaCerradas) return;
+
+        try {
+            const eventos = await obtenerEventosWebRecientes(7, 10);
+            if (!eventos.length) return;
+
+            const lista = obtenerListaPanelAlertasMapa();
+            if (!lista) return;
+            lista.innerHTML = '';
+            eventos.forEach(evento => mostrarAlertaSobreMapa(evento, false));
+            panelAlertasInicialCargado = true;
+        } catch (error) {
+            console.warn('No se pudo cargar el panel permanente de alertas:', error);
+        }
+    }
+
+    function mostrarAlertaSobreMapa(evento, alInicio = true) {
+        const listaPanel = obtenerListaPanelAlertasMapa();
+        if (!listaPanel) return;
 
         const popup = document.createElement('div');
         popup.className = 'alerta-mapa-popup';
@@ -2331,29 +2711,47 @@ html, body {
         const fechaEvento = new Date(evento.eventTime || evento.serverTime || Date.now());
         hora.textContent = Number.isNaN(fechaEvento.getTime())
             ? 'Ahora'
-            : fechaEvento.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+            : `${fechaEvento.toLocaleDateString()} · ${fechaEvento.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
 
         const mensaje = document.createElement('div');
         mensaje.className = 'alerta-mapa-mensaje';
         mensaje.textContent = crearMensajeEvento(evento);
 
-        const cerrar = document.createElement('button');
-        cerrar.type = 'button';
-        cerrar.className = 'alerta-mapa-cerrar';
-        cerrar.setAttribute('aria-label', 'Cerrar alerta');
-        cerrar.textContent = '×';
-        cerrar.addEventListener('click', () => {
-            popup.classList.add('saliendo');
-            setTimeout(() => popup.remove(), 550);
-        });
+        const direccion = document.createElement('div');
+        direccion.className = 'alerta-mapa-mensaje';
+        direccion.style.cssText = 'margin-top:4px; color:#c8c8c8;';
+        direccion.textContent = 'Consultando dirección...';
 
         cabecera.appendChild(titulo);
         cabecera.appendChild(hora);
-        popup.appendChild(cerrar);
         popup.appendChild(cabecera);
         popup.appendChild(mensaje);
-        contenedor.prepend(popup);
-        contenedor.scrollTop = 0;
+        popup.appendChild(direccion);
+        if (alInicio) {
+            listaPanel.prepend(popup);
+            listaPanel.scrollTop = 0;
+        } else {
+            listaPanel.appendChild(popup);
+        }
+
+        obtenerDetalleUbicacionEvento(evento).then(detalle => {
+            if (!popup.isConnected) return;
+            if (!detalle) {
+                direccion.textContent = 'Dirección no disponible';
+                return;
+            }
+
+            direccion.textContent = detalle.direccion;
+            popup.style.cursor = 'pointer';
+            popup.title = 'Abrir ubicación en Google Maps';
+            popup.addEventListener('click', () => {
+                window.open(
+                    `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${detalle.latitude},${detalle.longitude}`)}`,
+                    '_blank',
+                    'noopener,noreferrer'
+                );
+            });
+        });
     }
 
     async function consultarEventosAlertasWeb() {
@@ -2484,7 +2882,7 @@ html, body {
             }
 
             actualizarDetalleCanal(
-                'Aviso Web de prueba aceptado. Se mostrará en una interfaz web conectada a esta cuenta.',
+                'Aviso Web de prueba aceptado. Se mostrará dentro de Eagle Track GPS con esta cuenta conectada.',
                 'ok'
             );
         } catch (error) {
@@ -2759,39 +3157,80 @@ html, body {
     async function cargarNotificacionesRegistradas() {
         const contenedor = document.getElementById('lista-notificaciones-servidor');
         if (!contenedor) return;
-        contenedor.innerHTML = '<p style="color: #ccc;">Cargando reglas...</p>';
+        contenedor.innerHTML = '<p style="color: #ccc;">Cargando eventos y ubicaciones...</p>';
 
         try {
-            const lista = await actualizarReglasWebRegistradas();
+            const reglas = await actualizarReglasWebRegistradas();
             contenedor.innerHTML = '';
 
-            if (!lista || lista.length === 0) {
-                contenedor.innerHTML = '<p style="color: #888;">No hay reglas de alerta configuradas aún.</p>';
+            if (!reglas || reglas.length === 0) {
+                contenedor.innerHTML = '<p style="color: #888;">No hay alertas Web configuradas.</p>';
                 return;
             }
 
-            lista.forEach(item => {
-                let canales = item.notificators ? item.notificators.toUpperCase() : 'WEB';
-                const nombreTipo = item.type ? nombreLegibleEvento(item.type) : 'Evento';
+            if (!Object.keys(dispositivosActuales).length) {
+                contenedor.innerHTML = '<p style="color: #888;">Esperando información del vehículo...</p>';
+                return;
+            }
+
+            const eventos = await obtenerEventosWebRecientes(7, 12);
+
+            if (!eventos.length) {
+                contenedor.innerHTML = '<p style="color: #888;">No hay eventos Web registrados en los últimos 7 días.</p>';
+                return;
+            }
+
+            for (const evento of eventos) {
+                const detalle = await obtenerDetalleUbicacionEvento(evento);
+                const fecha = new Date(evento.eventTime || evento.serverTime || Date.now());
                 const card = document.createElement('div');
-                card.className = 'notif-item-card';
-                card.innerHTML = `
-                    <div style="flex-grow: 1;">
-                        <strong style="color: #ff0000; font-size: 12px; display: block;">
-                            <i class="fas fa-bell"></i> ${nombreTipo}
-                        </strong>
-                        <div style="font-size: 10px; color: #aaa; margin-top: 2px;">
-                            Canales: <span style="color:#00ff66;">${canales}</span> | ${item.always ? '24/7' : 'Sesión'}
-                        </div>
-                    </div>
-                    <button onclick="eliminarNotificacionEagleTrack(${item.id})" style="background: #ff0000; color: #fff; border: none; padding: 5px 8px; border-radius: 4px; cursor: pointer;" title="Eliminar regla">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                `;
+                card.className = 'notif-item-card notif-evento-card';
+                card.title = detalle ? 'Abrir ubicación en Google Maps' : 'Ubicación no disponible';
+
+                const contenido = document.createElement('div');
+                contenido.style.flexGrow = '1';
+
+                const titulo = document.createElement('strong');
+                titulo.style.cssText = 'color:#ff0000; font-size:12px; display:block;';
+                titulo.textContent = nombreLegibleEvento(evento.type);
+
+                const fechaHora = document.createElement('div');
+                fechaHora.className = 'notif-evento-fecha';
+                fechaHora.textContent = Number.isNaN(fecha.getTime())
+                    ? 'Fecha y hora no disponibles'
+                    : `${fecha.toLocaleDateString()} · ${fecha.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}`;
+
+                const direccion = document.createElement('div');
+                direccion.className = 'notif-evento-direccion';
+                direccion.textContent = detalle?.direccion || 'Dirección no disponible';
+
+                const canal = document.createElement('div');
+                canal.className = 'notif-evento-canal';
+                canal.textContent = 'CANAL WEB';
+
+                contenido.appendChild(titulo);
+                contenido.appendChild(fechaHora);
+                contenido.appendChild(direccion);
+                contenido.appendChild(canal);
+                card.appendChild(contenido);
+
+                if (detalle) {
+                    card.addEventListener('click', () => {
+                        window.open(
+                            `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(`${detalle.latitude},${detalle.longitude}`)}`,
+                            '_blank',
+                            'noopener,noreferrer'
+                        );
+                    });
+                }
+
                 contenedor.appendChild(card);
-            });
+            }
+
+            cargarAlertasPersistentesMapa();
         } catch (e) {
-            contenedor.innerHTML = '<p style="color: #ff0000;">Error al obtener notificaciones del servidor.</p>';
+            console.warn('Error cargando el historial de alertas Web:', e);
+            contenedor.innerHTML = '<p style="color: #ff0000;">Error al obtener las alertas Web del servidor.</p>';
         }
     }
 
