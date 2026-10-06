@@ -7,11 +7,11 @@
     
     <!-- LIBRERÍAS EXTERNAS AL PRINCIPIO -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
-    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-    <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+    <script src="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.js"></script>
 
 <style>
 /* ================================
@@ -440,8 +440,8 @@ html, body {
 /* Alertas Web recientes sobre el mapa. */
 #alertas-mapa-container {
     position: absolute;
-    top: 15px;
-    right: 15px;
+    top: calc(12px + env(safe-area-inset-top, 0px));
+    right: calc(10px + env(safe-area-inset-right, 0px));
     z-index: 100001;
     width: min(68vw, 270px);
     max-height: 170px;
@@ -450,6 +450,13 @@ html, body {
     pointer-events: auto;
     scrollbar-width: thin;
     scrollbar-color: #ff0000 rgba(0, 0, 0, 0.35);
+}
+
+@media (max-width: 600px) {
+    #alertas-mapa-container {
+        width: min(72vw, 265px);
+        max-height: 180px;
+    }
 }
 
 #alertas-mapa-container:empty {
@@ -605,14 +612,6 @@ html, body {
 .leaflet-tile.capa-relieve-sombras {
     mix-blend-mode: multiply;
     filter: contrast(1.3) brightness(0.88);
-}
-
-.leaflet-tile.capa-nocturna-movil {
-    filter: grayscale(1) invert(0.9) sepia(1) saturate(7) hue-rotate(305deg) brightness(0.33) contrast(1.5);
-}
-
-.leaflet-tile.capa-3d-respaldo {
-    filter: saturate(0.86) contrast(1.05) brightness(0.95);
 }
 
 /* ================================
@@ -1330,7 +1329,6 @@ html, body {
     let mapaWebGL = null;
     let marcadorWebGL = null;
     let modoWebGLActual = null;
-    let temporizadorCargaWebGL = null;
     let estiloMapaActual = 'satelite'; 
     let marcadoresVehiculos = {};
     let marcadoresSonar = {};
@@ -1516,10 +1514,6 @@ html, body {
             marcadorWebGL = null;
             modoWebGLActual = null;
         }
-        if (temporizadorCargaWebGL) {
-            clearTimeout(temporizadorCargaWebGL);
-            temporizadorCargaWebGL = null;
-        }
         document.getElementById('mapa-webgl').style.display = 'none';
         document.getElementById('mapa-webgl').innerHTML = '';
         contenedor.style.display = 'block';
@@ -1608,11 +1602,6 @@ html, body {
         const contenedorWebGL = document.getElementById('mapa-webgl');
         const contenedorLeaflet = document.getElementById('mapa2');
 
-        if (temporizadorCargaWebGL) {
-            clearTimeout(temporizadorCargaWebGL);
-            temporizadorCargaWebGL = null;
-        }
-
         if (mapaWebGL) {
             mapaWebGL.remove();
             mapaWebGL = null;
@@ -1630,13 +1619,6 @@ html, body {
     function activarMapaWebGL(modo) {
         const contenedorWebGL = document.getElementById('mapa-webgl');
         const contenedorLeaflet = document.getElementById('mapa2');
-
-        if (!window.maplibregl || !maplibregl.supported()) {
-            activarMapaRasterRespaldo(modo);
-            return;
-        }
-
-        if (temporizadorCargaWebGL) clearTimeout(temporizadorCargaWebGL);
 
         if (mapaWebGL) mapaWebGL.remove();
         mapaWebGL = null;
@@ -1665,21 +1647,8 @@ html, body {
             canvasContextAttributes: { antialias: true }
         };
 
-        try {
-            mapaWebGL = new maplibregl.Map(opciones);
-        } catch (error) {
-            console.warn('WebGL no disponible; usando mapa móvil de respaldo:', error);
-            activarMapaRasterRespaldo(modo);
-            return;
-        }
+        mapaWebGL = new maplibregl.Map(opciones);
         mapaWebGL.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'bottom-right');
-
-        temporizadorCargaWebGL = setTimeout(() => {
-            if (modoWebGLActual === modo) {
-                console.warn('El mapa WebGL tardó demasiado; activando respaldo móvil.');
-                activarMapaRasterRespaldo(modo);
-            }
-        }, 9000);
 
         mapaWebGL.on('load', () => {
             if (modo === 'relieve3d') configurarConduccion3D();
@@ -1693,67 +1662,9 @@ html, body {
             }
         });
 
-        mapaWebGL.once('idle', () => {
-            if (temporizadorCargaWebGL) {
-                clearTimeout(temporizadorCargaWebGL);
-                temporizadorCargaWebGL = null;
-            }
-        });
-
         mapaWebGL.on('error', error => {
             console.warn('Error cargando el mapa WebGL:', error.error || error);
         });
-    }
-
-    function activarMapaRasterRespaldo(modo) {
-        if (temporizadorCargaWebGL) {
-            clearTimeout(temporizadorCargaWebGL);
-            temporizadorCargaWebGL = null;
-        }
-        if (mapaWebGL) {
-            mapaWebGL.remove();
-            mapaWebGL = null;
-        }
-        marcadorWebGL = null;
-        modoWebGLActual = null;
-
-        const contenedorWebGL = document.getElementById('mapa-webgl');
-        const contenedorLeaflet = document.getElementById('mapa2');
-        contenedorWebGL.style.display = 'none';
-        contenedorWebGL.classList.remove('modo-conduccion');
-        contenedorWebGL.innerHTML = '';
-        contenedorLeaflet.style.display = 'block';
-        if (mapa) mapa.invalidateSize();
-
-        if (capaMapa && mapa.hasLayer(capaMapa)) mapa.removeLayer(capaMapa);
-
-        if (modo === 'oscuro') {
-            capaMapa = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxNativeZoom: 19,
-                maxZoom: 22,
-                className: 'capa-nocturna-movil',
-                attribution: '&copy; OpenStreetMap'
-            });
-        } else {
-            const calles = L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                maxNativeZoom: 19,
-                maxZoom: 22,
-                className: 'capa-3d-respaldo',
-                attribution: '&copy; OpenStreetMap'
-            });
-            const relieve = L.tileLayer('https://services.arcgisonline.com/arcgis/rest/services/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}', {
-                maxNativeZoom: 16,
-                maxZoom: 22,
-                opacity: 0.32,
-                className: 'capa-relieve-sombras',
-                attribution: '&copy; Esri'
-            });
-            capaMapa = L.layerGroup([calles, relieve]);
-        }
-
-        capaMapa.addTo(mapa);
-        estiloMapaActual = modo;
-        if (ultimaLatitud && ultimaLongitud) mapa.setView([ultimaLatitud, ultimaLongitud], 18);
     }
 
     function crearEstiloNocturnoRojo() {
@@ -2195,10 +2106,6 @@ html, body {
             mapaWebGL = null;
             marcadorWebGL = null;
             modoWebGLActual = null;
-        }
-        if (temporizadorCargaWebGL) {
-            clearTimeout(temporizadorCargaWebGL);
-            temporizadorCargaWebGL = null;
         }
         
         marcadoresVehiculos = {};
@@ -2680,12 +2587,30 @@ html, body {
 
         try {
             const eventos = await obtenerEventosWebRecientes(7, 10);
-            if (!eventos.length) return;
-
             const lista = obtenerListaPanelAlertasMapa();
             if (!lista) return;
             lista.innerHTML = '';
-            eventos.forEach(evento => mostrarAlertaSobreMapa(evento, false));
+
+            if (eventos.length) {
+                eventos.forEach(evento => mostrarAlertaSobreMapa(evento, false));
+            } else {
+                tiposAlertasWebRegistradas.forEach(tipo => {
+                    const regla = document.createElement('div');
+                    regla.className = 'alerta-mapa-popup';
+
+                    const titulo = document.createElement('div');
+                    titulo.className = 'alerta-mapa-titulo';
+                    titulo.textContent = nombreLegibleEvento(tipo);
+
+                    const mensaje = document.createElement('div');
+                    mensaje.className = 'alerta-mapa-mensaje';
+                    mensaje.textContent = 'Regla Web activa. Esperando un nuevo evento.';
+
+                    regla.appendChild(titulo);
+                    regla.appendChild(mensaje);
+                    lista.appendChild(regla);
+                });
+            }
             panelAlertasInicialCargado = true;
         } catch (error) {
             console.warn('No se pudo cargar el panel permanente de alertas:', error);
