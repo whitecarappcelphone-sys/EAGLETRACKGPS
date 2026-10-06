@@ -8,6 +8,8 @@
     <!-- LIBRERÍAS EXTERNAS AL PRINCIPIO -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet/dist/leaflet.css" />
     <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.6.2/dist/maplibre-gl.css" />
+    <link rel="preconnect" href="https://tiles.openfreemap.org" crossorigin>
+    <link rel="dns-prefetch" href="https://tiles.openfreemap.org">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
@@ -435,6 +437,14 @@ html, body {
     pointer-events: none;
 }
 
+#control-recorridos {
+    position: absolute;
+    top: 363px;
+    right: 15px;
+    z-index: 10000;
+    pointer-events: none;
+}
+
 #pantalla-mapa #resultado { display: none; }
 
 /* Alertas Web recientes sobre el mapa. */
@@ -443,7 +453,7 @@ html, body {
     top: calc(12px + env(safe-area-inset-top, 0px));
     right: calc(10px + env(safe-area-inset-right, 0px));
     z-index: 100001;
-    width: min(68vw, 270px);
+    width: min(62vw, 235px);
     max-height: 170px;
     overflow-y: auto;
     display: block;
@@ -454,7 +464,7 @@ html, body {
 
 @media (max-width: 600px) {
     #alertas-mapa-container {
-        width: min(72vw, 265px);
+        width: min(62vw, 235px);
         max-height: 180px;
     }
 }
@@ -561,6 +571,17 @@ html, body {
     color: #ffffff;
     font-size: 9.5px;
     line-height: 1.3;
+}
+
+.alerta-mapa-accion {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 5px;
+    color: #ff4444;
+    font-size: 8.5px;
+    font-weight: bold;
+    text-transform: uppercase;
 }
 
 .alerta-mapa-cerrar {
@@ -979,6 +1000,288 @@ html, body {
     background: rgba(0, 255, 102, 0.14);
     color: #00ff66;
 }
+
+/* ================================
+   MODAL COMPLETO DE RECORRIDOS
+   ================================ */
+#modal-recorridos {
+    padding: 0;
+    background: #0a0a0a;
+    z-index: 2000000;
+}
+
+.recorridos-shell {
+    position: fixed;
+    inset: 0;
+    overflow: hidden;
+    background: #0a0a0a;
+    color: #e0e0e0;
+}
+
+#mapa-recorrido {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+}
+
+.recorridos-panel-superior {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 1001;
+    padding: calc(9px + env(safe-area-inset-top, 0px)) 12px 9px;
+    background: rgba(10, 10, 10, 0.94);
+    border-bottom: 1px solid rgba(255, 0, 0, 0.4);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.72);
+    backdrop-filter: blur(8px);
+}
+
+.recorridos-cabecera {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.recorridos-titulo {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    color: #ff0000;
+    font-size: 15px;
+    font-weight: bold;
+    letter-spacing: 0.8px;
+}
+
+.recorridos-acciones {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+}
+
+.recorridos-buscar,
+.recorridos-cerrar {
+    border: 1px solid rgba(255, 0, 0, 0.65);
+    border-radius: 8px;
+    background: #9c0000;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.recorridos-buscar { padding: 7px 12px; }
+.recorridos-cerrar {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    background: #222;
+    font-size: 18px;
+}
+
+.recorridos-controles {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+    scrollbar-width: thin;
+    scrollbar-color: #ff0000 #111;
+}
+
+.recorridos-grupo {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    flex: 0 0 auto;
+}
+
+.recorridos-grupo label {
+    color: #bbbbbb;
+    font-size: 10px;
+    white-space: nowrap;
+}
+
+.recorridos-grupo select,
+.recorridos-grupo input {
+    height: 30px;
+    min-width: 142px;
+    padding: 4px 7px;
+    border: 1px solid rgba(255, 0, 0, 0.38);
+    border-radius: 6px;
+    outline: none;
+    background: #111111;
+    color: #eeeeee;
+    font-family: inherit;
+    font-size: 10px;
+}
+
+.recorridos-barra-estado {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 1001;
+    min-height: 32px;
+    padding: 7px 12px calc(7px + env(safe-area-inset-bottom, 0px));
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    background: rgba(10, 10, 10, 0.94);
+    border-top: 1px solid rgba(255, 0, 0, 0.3);
+    color: #999999;
+    font-size: 10px;
+    backdrop-filter: blur(7px);
+}
+
+.recorridos-stat { color: #ff4444; font-weight: bold; }
+
+.recorridos-leyenda {
+    position: absolute;
+    right: 10px;
+    bottom: 43px;
+    z-index: 1001;
+    padding: 8px 10px;
+    border: 1px solid rgba(255, 0, 0, 0.3);
+    border-radius: 9px;
+    background: rgba(10, 10, 10, 0.9);
+    color: #dddddd;
+    font-size: 9px;
+    backdrop-filter: blur(6px);
+}
+
+.recorridos-leyenda-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 4px;
+}
+
+.recorridos-punto-leyenda {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+}
+
+.recorridos-loading {
+    position: absolute;
+    inset: 0;
+    z-index: 1500;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    gap: 11px;
+    background: rgba(6, 5, 5, 0.84);
+}
+
+.recorridos-loading.activo { display: flex; }
+
+.recorridos-mensaje {
+    position: absolute;
+    inset: 0;
+    z-index: 1700;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    background: rgba(0, 0, 0, 0.82);
+}
+
+.recorridos-mensaje.activo { display: flex; }
+
+.recorridos-mensaje-box {
+    width: min(90%, 350px);
+    padding: 20px;
+    border: 2px solid #ff0000;
+    border-radius: 14px;
+    background: #121212;
+    color: #ffffff;
+    text-align: center;
+    box-shadow: 0 0 16px rgba(255, 0, 0, 0.45);
+}
+
+.recorridos-mensaje-box p { margin-bottom: 14px; color: #cccccc; font-size: 12px; }
+.recorridos-mensaje-box button {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    background: #cc0000;
+    color: #ffffff;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.recorridos-spinner {
+    width: 38px;
+    height: 38px;
+    border: 3px solid rgba(255, 0, 0, 0.2);
+    border-top-color: #ff0000;
+    border-radius: 50%;
+    animation: girarRecorrido 0.8s linear infinite;
+}
+
+@keyframes girarRecorrido { to { transform: rotate(360deg); } }
+
+.recorrido-extremo-icon {
+    background: transparent !important;
+    border: none !important;
+}
+
+.recorrido-extremo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    filter: drop-shadow(0 3px 5px rgba(0, 0, 0, 0.85));
+}
+
+.recorrido-extremo span {
+    padding: 3px 7px;
+    border: 1px solid #ffffff;
+    border-radius: 4px;
+    color: #ffffff;
+    font-size: 9px;
+    font-weight: bold;
+}
+
+.recorrido-extremo.inicio span { background: #008f35; }
+.recorrido-extremo.final span { background: #c00000; }
+.recorrido-extremo i {
+    width: 12px;
+    height: 12px;
+    margin-top: 2px;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+}
+.recorrido-extremo.inicio i { background: #00ff66; }
+.recorrido-extremo.final i { background: #ff2222; }
+
+.popup-recorrido .leaflet-popup-content-wrapper {
+    background: rgba(12, 12, 12, 0.96) !important;
+    color: #ffffff !important;
+    border: 1.5px solid #ff0000 !important;
+    border-radius: 8px !important;
+    box-shadow: 0 0 10px rgba(255, 0, 0, 0.42), 0 4px 18px rgba(0, 0, 0, 0.85) !important;
+}
+.popup-recorrido .leaflet-popup-tip { background: #0c0c0c !important; }
+.recorrido-popup-titulo { color: #ff3333; font-size: 11px; font-weight: bold; }
+.recorrido-popup-fila { margin-top: 4px; color: #dddddd; font-size: 10px; }
+.recorrido-popup-direccion { margin-top: 5px; color: #bbbbbb; font-size: 9.5px; line-height: 1.25; }
+
+@media (max-width: 600px) {
+    #control-recorridos { top: 363px; right: 10px; }
+    .recorridos-titulo { font-size: 12px; }
+    .recorridos-buscar { padding: 7px 9px; font-size: 10px; }
+    .recorridos-controles { gap: 6px; }
+    .recorridos-grupo select,
+    .recorridos-grupo input { min-width: 136px; font-size: 9.5px; }
+    .recorridos-leyenda { display: none; }
+    .recorridos-barra-estado { font-size: 9px; }
+}
 </style>
 </head>
 <body>
@@ -1073,6 +1376,13 @@ html, body {
         <button onclick="abrirModalNotificaciones()" class="btn-actualizar" title="Alertas" aria-label="Alertas">
             <i class="fas fa-bell"></i>
             <span>Alertas</span>
+        </button>
+    </div>
+
+    <div id="control-recorridos">
+        <button onclick="abrirModalRecorridos()" class="btn-actualizar" title="Recorridos" aria-label="Recorridos">
+            <i class="fas fa-route"></i>
+            <span>Recorridos</span>
         </button>
     </div>
 
@@ -1308,6 +1618,71 @@ html, body {
     </div>
 </div>
 
+<!-- MODAL COMPLETO DE RECORRIDOS -->
+<div id="modal-recorridos" class="modal-overlay">
+    <div class="recorridos-shell">
+        <div id="mapa-recorrido"></div>
+
+        <div class="recorridos-panel-superior">
+            <div class="recorridos-cabecera">
+                <div class="recorridos-titulo">
+                    <i class="fas fa-route"></i>
+                    <span>RECORRIDO DEL VEHÍCULO</span>
+                </div>
+                <div class="recorridos-acciones">
+                    <button class="recorridos-buscar" onclick="cargarRecorridoModal()">
+                        <i class="fas fa-search"></i> BUSCAR
+                    </button>
+                    <button class="recorridos-cerrar" onclick="cerrarModalRecorridos()" aria-label="Cerrar recorridos">×</button>
+                </div>
+            </div>
+
+            <div class="recorridos-controles">
+                <div class="recorridos-grupo">
+                    <label for="recorrido-vehiculo"><i class="fas fa-car" style="color:#ff4444;"></i> Vehículo</label>
+                    <select id="recorrido-vehiculo">
+                        <option value="">Cargando...</option>
+                    </select>
+                </div>
+                <div class="recorridos-grupo">
+                    <label for="recorrido-desde"><i class="fas fa-calendar-alt" style="color:#ff4444;"></i> Desde</label>
+                    <input type="datetime-local" id="recorrido-desde">
+                </div>
+                <div class="recorridos-grupo">
+                    <label for="recorrido-hasta"><i class="fas fa-calendar-alt" style="color:#ff4444;"></i> Hasta</label>
+                    <input type="datetime-local" id="recorrido-hasta">
+                </div>
+            </div>
+        </div>
+
+        <div class="recorridos-leyenda">
+            <strong style="color:#ff0000;"><i class="fas fa-info-circle"></i> Leyenda</strong>
+            <div class="recorridos-leyenda-item"><span class="recorridos-punto-leyenda" style="background:#00ff66;"></span> Movimiento</div>
+            <div class="recorridos-leyenda-item"><span class="recorridos-punto-leyenda" style="background:#ffaa00;"></span> Detenido</div>
+            <div class="recorridos-leyenda-item"><span class="recorridos-punto-leyenda" style="background:#ff4444;"></span> Apagado</div>
+            <div class="recorridos-leyenda-item"><span style="width:12px;height:3px;background:#ff0000;"></span> Ruta</div>
+        </div>
+
+        <div class="recorridos-barra-estado">
+            <span id="recorrido-stat-izq">Sin datos cargados</span>
+            <span id="recorrido-stat-der"></span>
+        </div>
+
+        <div id="recorrido-loading" class="recorridos-loading">
+            <div class="recorridos-spinner"></div>
+            <div id="recorrido-loading-text" style="color:#ff4444;font-size:12px;font-weight:bold;">Cargando recorrido...</div>
+        </div>
+
+        <div id="recorrido-mensaje" class="recorridos-mensaje">
+            <div class="recorridos-mensaje-box">
+                <h3 style="color:#ff0000;margin-bottom:10px;"><i class="fas fa-bell"></i> Notificación</h3>
+                <p id="recorrido-mensaje-texto"></p>
+                <button onclick="cerrarMensajeRecorrido()">ACEPTAR</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- SCRIPTS UNIFICADOS -->
 <script>
     const videoIntro = document.querySelector('#intro-video video');
@@ -1329,6 +1704,8 @@ html, body {
     let mapaWebGL = null;
     let marcadorWebGL = null;
     let modoWebGLActual = null;
+    let estiloMapa3DPrecargado = null;
+    let promesaEstiloMapa3D = null;
     let estiloMapaActual = 'satelite'; 
     let marcadoresVehiculos = {};
     let marcadoresSonar = {};
@@ -1361,9 +1738,15 @@ html, body {
     let alertasMapaCerradas = false;
     let panelAlertasInicialCargado = false;
 
+    let mapaRecorrido = null;
+    let capaPuntosRecorrido = null;
+    let capaRutaRecorrido = null;
+    let dispositivosRecorrido = [];
+
     const EAGLE_TRACK_API_ORIGIN = 'https://whitecargps.duckdns.org';
 
     window.addEventListener('load', () => {
+        precargarMapa3D();
         const emailGuardado = localStorage.getItem('eagle_email');
         const passwordGuardado = localStorage.getItem('eagle_password');
         const marcaGuardada = localStorage.getItem('eagle_marca');
@@ -1397,6 +1780,26 @@ html, body {
         return {
             'Authorization': 'Basic ' + btoa(email + ':' + password)
         };
+    }
+
+    function precargarMapa3D() {
+        if (!promesaEstiloMapa3D) {
+            promesaEstiloMapa3D = fetch('https://tiles.openfreemap.org/styles/liberty')
+                .then(response => {
+                    if (!response.ok) throw new Error('No se pudo precargar el estilo 3D');
+                    return response.json();
+                })
+                .then(estilo => {
+                    estiloMapa3DPrecargado = estilo;
+                    fetch('https://tiles.openfreemap.org/planet').catch(() => {});
+                    return estilo;
+                })
+                .catch(error => {
+                    console.warn('Precarga 3D no disponible:', error);
+                    return null;
+                });
+        }
+        return promesaEstiloMapa3D;
     }
     
     // Función central para reemplazar todos los alerts nativos
@@ -1569,14 +1972,15 @@ html, body {
         if (estilo === 'satelite') {
             const imagen = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
                 maxNativeZoom: 23,
-                maxZoom: 26,
-                keepBuffer: 4,
+                maxZoom: 28,
+                keepBuffer: 2,
                 updateWhenZooming: false,
+                updateWhenIdle: true,
                 attribution: '&copy; Esri World Imagery'
             });
             const referencias = L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
                 maxNativeZoom: 19,
-                maxZoom: 26,
+                maxZoom: 28,
                 opacity: 0.92,
                 attribution: '&copy; Esri'
             });
@@ -1637,7 +2041,9 @@ html, body {
             container: 'mapa-webgl',
             style: modo === 'oscuro'
                 ? crearEstiloNocturnoRojo()
-                : 'https://tiles.openfreemap.org/styles/liberty',
+                : estiloMapa3DPrecargado
+                    ? JSON.parse(JSON.stringify(estiloMapa3DPrecargado))
+                    : 'https://tiles.openfreemap.org/styles/liberty',
             center: centro,
             zoom: modo === 'relieve3d' ? 17.4 : 15.5,
             pitch: modo === 'relieve3d' ? 70 : 0,
@@ -1822,7 +2228,8 @@ html, body {
         }
     }
 
-    function cambiarMapa(estilo) {
+    async function cambiarMapa(estilo) {
+        if (estilo === 'relieve3d') await precargarMapa3D();
         aplicarEstiloMapa(estilo);
         cerrarModales();
     }
@@ -2553,7 +2960,7 @@ html, body {
             cabecera.className = 'alertas-mapa-panel-cabecera';
 
             const titulo = document.createElement('span');
-            titulo.textContent = 'ALERTAS WEB';
+            titulo.textContent = 'ALERTAS REGISTRADAS';
 
             const cerrar = document.createElement('button');
             cerrar.type = 'button';
@@ -2587,30 +2994,17 @@ html, body {
 
         try {
             const eventos = await obtenerEventosWebRecientes(7, 10);
+            if (!eventos.length) {
+                const contenedor = document.getElementById('alertas-mapa-container');
+                if (contenedor) contenedor.innerHTML = '';
+                panelAlertasInicialCargado = true;
+                return;
+            }
+
             const lista = obtenerListaPanelAlertasMapa();
             if (!lista) return;
             lista.innerHTML = '';
-
-            if (eventos.length) {
-                eventos.forEach(evento => mostrarAlertaSobreMapa(evento, false));
-            } else {
-                tiposAlertasWebRegistradas.forEach(tipo => {
-                    const regla = document.createElement('div');
-                    regla.className = 'alerta-mapa-popup';
-
-                    const titulo = document.createElement('div');
-                    titulo.className = 'alerta-mapa-titulo';
-                    titulo.textContent = nombreLegibleEvento(tipo);
-
-                    const mensaje = document.createElement('div');
-                    mensaje.className = 'alerta-mapa-mensaje';
-                    mensaje.textContent = 'Regla Web activa. Esperando un nuevo evento.';
-
-                    regla.appendChild(titulo);
-                    regla.appendChild(mensaje);
-                    lista.appendChild(regla);
-                });
-            }
+            eventos.forEach(evento => mostrarAlertaSobreMapa(evento, false));
             panelAlertasInicialCargado = true;
         } catch (error) {
             console.warn('No se pudo cargar el panel permanente de alertas:', error);
@@ -2647,11 +3041,16 @@ html, body {
         direccion.style.cssText = 'margin-top:4px; color:#c8c8c8;';
         direccion.textContent = 'Consultando dirección...';
 
+        const accionMapa = document.createElement('div');
+        accionMapa.className = 'alerta-mapa-accion';
+        accionMapa.innerHTML = '<i class="fas fa-map-marked-alt"></i><span>Ver mapa</span>';
+
         cabecera.appendChild(titulo);
         cabecera.appendChild(hora);
         popup.appendChild(cabecera);
         popup.appendChild(mensaje);
         popup.appendChild(direccion);
+        popup.appendChild(accionMapa);
         if (alInicio) {
             listaPanel.prepend(popup);
             listaPanel.scrollTop = 0;
@@ -3175,6 +3574,274 @@ html, body {
         } catch (e) {
             mostrarAlertaPersonalizada("Error de conexión al eliminar la regla.");
         }
+    }
+
+    /* ==============================================
+       RECORRIDOS DEL VEHÍCULO
+       ============================================== */
+    function abrirModalRecorridos() {
+        cerrarModales();
+        document.getElementById('modal-recorridos').style.display = 'flex';
+        inicializarMapaRecorrido();
+        establecerFechasRecorrido();
+        cargarDispositivosRecorrido();
+        setTimeout(() => mapaRecorrido?.invalidateSize(), 120);
+    }
+
+    function cerrarModalRecorridos() {
+        document.getElementById('modal-recorridos').style.display = 'none';
+        document.getElementById('recorrido-loading').classList.remove('activo');
+        document.getElementById('recorrido-mensaje').classList.remove('activo');
+    }
+
+    function mostrarMensajeRecorrido(mensaje) {
+        document.getElementById('recorrido-mensaje-texto').textContent = mensaje;
+        document.getElementById('recorrido-mensaje').classList.add('activo');
+    }
+
+    function cerrarMensajeRecorrido() {
+        document.getElementById('recorrido-mensaje').classList.remove('activo');
+    }
+
+    function inicializarMapaRecorrido() {
+        if (mapaRecorrido) return;
+
+        mapaRecorrido = L.map('mapa-recorrido', {
+            zoomControl: false,
+            attributionControl: false
+        }).setView([4.60971, -74.08175], 13);
+
+        L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+            maxNativeZoom: 21,
+            maxZoom: 23,
+            subdomains: ['mt0', 'mt1', 'mt2', 'mt3']
+        }).addTo(mapaRecorrido);
+
+        L.control.zoom({ position: 'bottomleft' }).addTo(mapaRecorrido);
+        capaPuntosRecorrido = L.layerGroup().addTo(mapaRecorrido);
+        capaRutaRecorrido = L.layerGroup().addTo(mapaRecorrido);
+    }
+
+    function fechaLocalInput(fecha) {
+        const y = fecha.getFullYear();
+        const m = String(fecha.getMonth() + 1).padStart(2, '0');
+        const d = String(fecha.getDate()).padStart(2, '0');
+        const h = String(fecha.getHours()).padStart(2, '0');
+        const min = String(fecha.getMinutes()).padStart(2, '0');
+        return `${y}-${m}-${d}T${h}:${min}`;
+    }
+
+    function establecerFechasRecorrido() {
+        const desde = document.getElementById('recorrido-desde');
+        const hasta = document.getElementById('recorrido-hasta');
+        if (desde.value && hasta.value) return;
+
+        const ahora = new Date();
+        const inicio = new Date(ahora.getFullYear(), ahora.getMonth(), ahora.getDate(), 0, 0, 0);
+        desde.value = fechaLocalInput(inicio);
+        hasta.value = fechaLocalInput(ahora);
+    }
+
+    async function cargarDispositivosRecorrido() {
+        const selector = document.getElementById('recorrido-vehiculo');
+        selector.innerHTML = '<option value="">Cargando...</option>';
+
+        try {
+            const response = await fetch(`${EAGLE_TRACK_API_ORIGIN}/api/devices`, {
+                headers: authHeaders()
+            });
+            if (!response.ok) throw new Error(`Error ${response.status}`);
+
+            dispositivosRecorrido = await response.json();
+            selector.innerHTML = '';
+
+            if (!dispositivosRecorrido.length) {
+                selector.innerHTML = '<option value="">Sin vehículos</option>';
+                return;
+            }
+
+            dispositivosRecorrido.forEach(dispositivo => {
+                const opcion = document.createElement('option');
+                opcion.value = dispositivo.id;
+                opcion.textContent = dispositivo.name || `Vehículo #${dispositivo.id}`;
+                selector.appendChild(opcion);
+            });
+
+            if (dispositivoActualId && dispositivosRecorrido.some(item => item.id === dispositivoActualId)) {
+                selector.value = String(dispositivoActualId);
+            }
+        } catch (error) {
+            selector.innerHTML = '<option value="">Error al cargar</option>';
+            mostrarMensajeRecorrido(`No se pudieron cargar los vehículos: ${error.message}`);
+        }
+    }
+
+    function activarLoadingRecorrido(texto) {
+        document.getElementById('recorrido-loading-text').textContent = texto || 'Cargando recorrido...';
+        document.getElementById('recorrido-loading').classList.add('activo');
+    }
+
+    function desactivarLoadingRecorrido() {
+        document.getElementById('recorrido-loading').classList.remove('activo');
+    }
+
+    async function cargarRecorridoModal() {
+        const deviceId = document.getElementById('recorrido-vehiculo').value;
+        const desde = document.getElementById('recorrido-desde').value;
+        const hasta = document.getElementById('recorrido-hasta').value;
+
+        if (!deviceId || !desde || !hasta) {
+            mostrarMensajeRecorrido('Selecciona el vehículo y el rango de fechas.');
+            return;
+        }
+
+        const fechaDesde = new Date(desde);
+        const fechaHasta = new Date(hasta);
+        if (fechaDesde >= fechaHasta) {
+            mostrarMensajeRecorrido('La fecha inicial debe ser anterior a la fecha final.');
+            return;
+        }
+
+        activarLoadingRecorrido('Consultando posiciones...');
+        capaPuntosRecorrido.clearLayers();
+        capaRutaRecorrido.clearLayers();
+
+        try {
+            const url = `${EAGLE_TRACK_API_ORIGIN}/api/positions?deviceId=${deviceId}&from=${encodeURIComponent(fechaDesde.toISOString())}&to=${encodeURIComponent(fechaHasta.toISOString())}`;
+            const response = await fetch(url, { headers: authHeaders() });
+            if (!response.ok) throw new Error(`Error del servidor: ${response.status}`);
+
+            const posiciones = await response.json();
+            if (!posiciones.length) {
+                actualizarEstadoRecorrido(0, 0, 0, 0);
+                mostrarMensajeRecorrido('No se encontraron posiciones en el rango seleccionado.');
+                return;
+            }
+
+            posiciones.sort((a, b) => new Date(a.deviceTime) - new Date(b.deviceTime));
+            renderizarRecorridoModal(posiciones);
+        } catch (error) {
+            mostrarMensajeRecorrido(`Error al obtener posiciones: ${error.message}`);
+        } finally {
+            desactivarLoadingRecorrido();
+        }
+    }
+
+    function escaparHTML(valor) {
+        return String(valor ?? '').replace(/[&<>'"]/g, caracter => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;'
+        })[caracter]);
+    }
+
+    function crearIconoExtremoRecorrido(tipo) {
+        const inicio = tipo === 'inicio';
+        return L.divIcon({
+            className: 'recorrido-extremo-icon',
+            html: `<div class="recorrido-extremo ${tipo}"><span>${inicio ? 'INICIO' : 'FINAL'}</span><i></i></div>`,
+            iconSize: [70, 40],
+            iconAnchor: [35, 34],
+            popupAnchor: [0, -35]
+        });
+    }
+
+    function construirPopupRecorrido(posicion, indice, total) {
+        const ignition = posicion.attributes?.ignition === true;
+        const motion = posicion.attributes?.motion === true;
+        const velocidad = posicion.speed !== undefined ? (posicion.speed * 1.852).toFixed(1) : '0.0';
+        const fecha = new Date(posicion.deviceTime || posicion.serverTime || Date.now()).toLocaleString('es-ES');
+        const estado = !ignition ? 'APAGADO' : motion ? 'EN MOVIMIENTO' : 'DETENIDO';
+        const direccion = posicion.address ? escaparHTML(posicion.address) : 'Dirección no disponible';
+
+        return `
+            <div class="recorrido-popup-titulo"><i class="fas fa-map-pin"></i> Punto ${indice} de ${total}</div>
+            <div class="recorrido-popup-fila"><i class="fas fa-clock"></i> ${escaparHTML(fecha)}</div>
+            <div class="recorrido-popup-fila"><strong>Ignición:</strong> ${ignition ? 'ENCENDIDO' : 'APAGADO'}</div>
+            <div class="recorrido-popup-fila"><strong>Estado:</strong> ${estado}</div>
+            <div class="recorrido-popup-fila"><strong>Velocidad:</strong> ${velocidad} km/h</div>
+            <div class="recorrido-popup-fila"><strong>Coordenadas:</strong> ${Number(posicion.latitude).toFixed(5)}, ${Number(posicion.longitude).toFixed(5)}</div>
+            <div class="recorrido-popup-direccion"><i class="fas fa-map-marker-alt"></i> ${direccion}</div>
+        `;
+    }
+
+    function renderizarRecorridoModal(posicionesOriginales) {
+        const maximo = 800;
+        let posiciones = posicionesOriginales;
+        if (posiciones.length > maximo) {
+            const paso = (posiciones.length - 1) / (maximo - 1);
+            posiciones = Array.from({ length: maximo }, (_, indice) => posiciones[Math.round(indice * paso)]);
+        }
+
+        const coordenadas = [];
+        let movimiento = 0;
+        let detenidos = 0;
+        let encendidos = 0;
+
+        posiciones.forEach((posicion, indice) => {
+            const lat = Number(posicion.latitude);
+            const lng = Number(posicion.longitude);
+            coordenadas.push([lat, lng]);
+
+            const ignition = posicion.attributes?.ignition === true;
+            const motion = posicion.attributes?.motion === true;
+            if (ignition) encendidos += 1;
+            if (motion) movimiento += 1; else detenidos += 1;
+
+            const esInicio = indice === 0;
+            const esFinal = indice === posiciones.length - 1 && posiciones.length > 1;
+            let icono;
+            let zIndex = 100;
+
+            if (esInicio) {
+                icono = crearIconoExtremoRecorrido('inicio');
+                zIndex = 2000;
+            } else if (esFinal) {
+                icono = crearIconoExtremoRecorrido('final');
+                zIndex = 2001;
+            } else {
+                const color = !ignition ? '#ff4444' : motion ? '#00ff66' : '#ffaa00';
+                icono = L.divIcon({
+                    className: 'recorrido-extremo-icon',
+                    html: `<div style="width:10px;height:10px;border:2px solid rgba(255,255,255,.75);border-radius:50%;background:${color};box-shadow:0 0 7px ${color};"></div>`,
+                    iconSize: [10, 10],
+                    iconAnchor: [5, 5]
+                });
+            }
+
+            L.marker([lat, lng], { icon: icono, zIndexOffset: zIndex })
+                .bindPopup(construirPopupRecorrido(posicion, indice + 1, posiciones.length), {
+                    maxWidth: 260,
+                    minWidth: 220,
+                    className: 'popup-recorrido'
+                })
+                .addTo(capaPuntosRecorrido);
+        });
+
+        if (coordenadas.length > 1) {
+            L.polyline(coordenadas, {
+                color: '#ff0000',
+                weight: 3.5,
+                opacity: 0.82,
+                lineJoin: 'round',
+                lineCap: 'round'
+            }).addTo(capaRutaRecorrido);
+        }
+
+        mapaRecorrido.fitBounds(L.latLngBounds(coordenadas), { padding: [70, 45], maxZoom: 17 });
+        actualizarEstadoRecorrido(posiciones.length, movimiento, detenidos, encendidos);
+    }
+
+    function actualizarEstadoRecorrido(total, movimiento, detenidos, encendidos) {
+        const izquierda = document.getElementById('recorrido-stat-izq');
+        const derecha = document.getElementById('recorrido-stat-der');
+
+        if (!total) {
+            izquierda.textContent = 'Sin datos cargados';
+            derecha.textContent = '';
+            return;
+        }
+
+        izquierda.innerHTML = `<span class="recorridos-stat">${total}</span> puntos · <span style="color:#00ff66;">${movimiento}</span> mov · <span style="color:#ffaa00;">${detenidos}</span> det`;
+        derecha.innerHTML = `<i class="fas fa-key" style="color:#ffaa00;"></i> <span class="recorridos-stat">${encendidos}</span> enc`;
     }
 
     console.log('EAGLE TRACK GPS CARGADO CORRECTAMENTE');  
