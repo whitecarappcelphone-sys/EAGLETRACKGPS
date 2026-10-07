@@ -189,11 +189,41 @@ html, body {
     box-shadow: inset 0 -90px 90px rgba(0, 0, 0, 0.35), inset 0 60px 80px rgba(120, 180, 220, 0.08);
 }
 
+.marcador-webgl-wrap {
+    position: relative;
+    width: 88px;
+    height: 88px;
+    pointer-events: none;
+    z-index: 25;
+}
+
 .marcador-webgl-vehiculo {
-    width: 78px;
-    height: 78px;
+    position: absolute;
+    inset: 0;
+    z-index: 2;
     background: url('https://i.imgur.com/2Q5Mv5j.png') center / contain no-repeat;
     filter: drop-shadow(0 5px 7px rgba(0, 0, 0, 0.85));
+}
+
+.sonar-webgl-wave {
+    position: absolute;
+    left: 50%;
+    bottom: 8px;
+    z-index: 1;
+    width: 22px;
+    height: 22px;
+    margin-left: -11px;
+    border: 2px solid #ff0000;
+    border-radius: 50%;
+    background: rgba(255, 0, 0, 0.38);
+    box-shadow: 0 0 14px #ff0000;
+    animation: sonarWebGL 2s infinite cubic-bezier(0.215, 0.61, 0.355, 1);
+}
+
+@keyframes sonarWebGL {
+    0% { transform: scale(0.25); opacity: 1; }
+    70% { opacity: 0.65; box-shadow: 0 0 28px #ff0000; }
+    100% { transform: scale(4.5); opacity: 0; }
 }
 
 #map-loading {
@@ -1060,7 +1090,7 @@ html, body {
     align-items: center;
     justify-content: space-between;
     gap: 8px;
-    padding-bottom: 4px;
+    padding: 4px 122px 4px 0;
     background: rgba(10, 10, 10, 0.98);
 }
 
@@ -1076,6 +1106,10 @@ html, body {
 }
 
 .recorridos-acciones {
+    position: fixed;
+    top: calc(8px + env(safe-area-inset-top, 0px));
+    right: calc(9px + env(safe-area-inset-right, 0px));
+    z-index: 2100;
     display: flex;
     align-items: center;
     gap: 7px;
@@ -1305,6 +1339,7 @@ html, body {
     .recorridos-titulo span { white-space: normal; line-height: 1.05; }
     .recorridos-buscar { padding: 7px 8px; font-size: 9px; }
     .recorridos-cerrar { width: 31px; height: 31px; }
+    .recorridos-cabecera { padding-right: 108px; }
     .recorridos-controles {
         display: grid;
         grid-template-columns: 1fr;
@@ -1486,7 +1521,7 @@ html, body {
 <div id="modal-menu-mapa" class="modal-overlay">
     <div class="modal-box">
         <h3>Seleccionar Mapa</h3>
-        <button class="btn-cancelar" onclick="cambiarMapa('satelite')" style="margin-bottom:10px;">SATÉLITE HD (ESRI)</button>
+        <button class="btn-cancelar" onclick="cambiarMapa('satelite')" style="margin-bottom:10px;">GOOGLE SATÉLITE (CALLES)</button>
         <button class="btn-cancelar" onclick="cambiarMapa('normal')" style="margin-bottom:10px;">MAPA NORMAL (CALLES)</button>
         <button class="btn-cancelar" onclick="cambiarMapa('oscuro')" style="margin-bottom:10px;">NOCTURNO ROJO (CALLES)</button>
         <button class="btn-cancelar" onclick="cambiarMapa('relieve3d')" style="margin-bottom:10px;">CONDUCCIÓN 3D</button>
@@ -1742,6 +1777,9 @@ html, body {
     let mapaWebGL = null;
     let marcadorWebGL = null;
     let modoWebGLActual = null;
+    let giroscopioMapaActivo = false;
+    let giroPausadoHasta = 0;
+    let ultimoGiroAplicado = 0;
     let estiloMapa3DPrecargado = null;
     let promesaEstiloMapa3D = null;
     let estiloMapaActual = 'satelite'; 
@@ -2009,21 +2047,16 @@ html, body {
         desactivarMapaWebGL();
 
         if (estilo === 'satelite') {
-            const imagen = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
-                maxNativeZoom: 23,
+            capaMapa = L.tileLayer('https://{s}.google.com/vt/lyrs=y&x={x}&y={y}&z={z}', {
+                subdomains: ['mt0', 'mt1', 'mt2', 'mt3'],
+                maxNativeZoom: 21,
                 maxZoom: 28,
                 keepBuffer: 2,
                 updateWhenZooming: false,
                 updateWhenIdle: true,
-                attribution: '&copy; Esri World Imagery'
+                noWrap: true,
+                attribution: '&copy; MapData'
             });
-            const referencias = L.tileLayer('https://services.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', {
-                maxNativeZoom: 19,
-                maxZoom: 28,
-                opacity: 0.92,
-                attribution: '&copy; Esri'
-            });
-            capaMapa = L.layerGroup([imagen, referencias]);
         } else if (estilo === 'normal') {
             capaMapa = L.tileLayer('https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}', {
                 maxNativeZoom: 21,
@@ -2075,6 +2108,7 @@ html, body {
         const centro = ultimaLatitud && ultimaLongitud
             ? [ultimaLongitud, ultimaLatitud]
             : [-74.08175, 4.60971];
+        const esMovil = window.matchMedia('(max-width: 700px)').matches;
 
         const opciones = {
             container: 'mapa-webgl',
@@ -2089,11 +2123,20 @@ html, body {
             bearing: 0,
             maxZoom: 22,
             maxPitch: 85,
-            canvasContextAttributes: { antialias: true }
+            fadeDuration: 0,
+            renderWorldCopies: false,
+            maxTileCacheSize: esMovil ? 24 : 48,
+            canvasContextAttributes: { antialias: !esMovil }
         };
 
         mapaWebGL = new maplibregl.Map(opciones);
         mapaWebGL.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'bottom-right');
+
+        ['dragstart', 'rotatestart', 'pitchstart', 'zoomstart'].forEach(evento => {
+            mapaWebGL.on(evento, () => {
+                giroPausadoHasta = Date.now() + 4500;
+            });
+        });
 
         mapaWebGL.on('load', () => {
             if (modo === 'relieve3d') configurarConduccion3D();
@@ -2227,6 +2270,17 @@ html, body {
                     'fill-extrusion-opacity': 0.94
                 }
             }, capaEtiquetas);
+
+            mapaWebGL.on('zoomstart', () => {
+                if (mapaWebGL?.getLayer('edificios-3d-egps')) {
+                    mapaWebGL.setLayoutProperty('edificios-3d-egps', 'visibility', 'none');
+                }
+            });
+            mapaWebGL.on('zoomend', () => {
+                if (mapaWebGL?.getLayer('edificios-3d-egps')) {
+                    mapaWebGL.setLayoutProperty('edificios-3d-egps', 'visibility', 'visible');
+                }
+            });
         }
 
         if (typeof mapaWebGL.setSky === 'function') {
@@ -2241,14 +2295,60 @@ html, body {
         }
     }
 
+    function manejarOrientacionMapa(evento) {
+        if (!giroscopioMapaActivo || modoWebGLActual !== 'relieve3d' || !mapaWebGL || !mapaWebGL.isStyleLoaded()) return;
+        if (Date.now() < giroPausadoHasta || Date.now() - ultimoGiroAplicado < 160) return;
+
+        let rumbo = Number(evento.webkitCompassHeading);
+        if (!Number.isFinite(rumbo) && Number.isFinite(Number(evento.alpha))) {
+            rumbo = 360 - Number(evento.alpha);
+        }
+        if (!Number.isFinite(rumbo)) return;
+
+        const beta = Number(evento.beta);
+        const pitch = Number.isFinite(beta)
+            ? Math.max(62, Math.min(78, 69 + (beta - 45) * 0.12))
+            : 70;
+
+        ultimoGiroAplicado = Date.now();
+        mapaWebGL.setBearing(rumbo);
+        mapaWebGL.setPitch(pitch);
+    }
+
+    function activarGiroscopioMapa() {
+        if (typeof DeviceOrientationEvent === 'undefined') return;
+
+        const registrar = () => {
+            if (!giroscopioMapaActivo) {
+                window.addEventListener('deviceorientation', manejarOrientacionMapa, true);
+                giroscopioMapaActivo = true;
+            }
+        };
+
+        if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+            DeviceOrientationEvent.requestPermission()
+                .then(estado => {
+                    if (estado === 'granted') registrar();
+                })
+                .catch(() => {});
+        } else {
+            registrar();
+        }
+    }
+
     function actualizarMarcadorWebGL(posicion) {
         if (!mapaWebGL || !mapaWebGL.isStyleLoaded()) return;
 
         const coordenadas = [posicion.longitude, posicion.latitude];
         if (!marcadorWebGL) {
             const elemento = document.createElement('div');
-            elemento.className = 'marcador-webgl-vehiculo';
-            marcadorWebGL = new maplibregl.Marker({ element: elemento, anchor: 'bottom' })
+            elemento.className = 'marcador-webgl-wrap';
+            elemento.innerHTML = '<div class="sonar-webgl-wave"></div><div class="marcador-webgl-vehiculo"></div>';
+            marcadorWebGL = new maplibregl.Marker({
+                element: elemento,
+                anchor: 'bottom',
+                offset: modoWebGLActual === 'relieve3d' ? [0, -92] : [0, -8]
+            })
                 .setLngLat(coordenadas)
                 .addTo(mapaWebGL);
         } else {
@@ -2261,14 +2361,17 @@ html, body {
                 zoom: Math.max(mapaWebGL.getZoom(), 17.4),
                 pitch: 70,
                 bearing: Number.isFinite(Number(posicion.course)) ? Number(posicion.course) : mapaWebGL.getBearing(),
-                offset: [0, 105],
-                duration: 950
+                offset: [0, 65],
+                duration: 650
             });
         }
     }
 
     async function cambiarMapa(estilo) {
-        if (estilo === 'relieve3d') await precargarMapa3D();
+        if (estilo === 'relieve3d') {
+            activarGiroscopioMapa();
+            await precargarMapa3D();
+        }
         aplicarEstiloMapa(estilo);
         cerrarModales();
     }
