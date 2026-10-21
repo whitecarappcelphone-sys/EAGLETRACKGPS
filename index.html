@@ -126,6 +126,46 @@ html, body { width: 100%; height: 100%; min-width: 0; min-height: 0; margin: 0; 
 .admin-option-go { color: #ff4444; font-size: 10px; font-weight: bold; flex-shrink: 0; }
 .admin-vehicle-empty { padding: 10px; color: #cccccc; font-size: 10.5px; text-align: center; }
 
+/* WIDGET FLOTANTE INDEPENDIENTE DE DESCARGA EN SEGUNDO PLANO */
+#descarga-progreso-widget { position: fixed; top: calc(15px + env(safe-area-inset-top, 0px)); right: calc(15px + env(safe-area-inset-right, 0px)); z-index: 2500000; display: none; width: min(272px, calc(100vw - 92px)); padding: 11px 13px; border: 1.5px solid rgba(255, 0, 0, 0.85); border-radius: 15px; background: linear-gradient(145deg, rgba(16, 16, 16, 0.95), rgba(7, 7, 7, 0.94)); box-shadow: 0 12px 30px rgba(0, 0, 0, 0.82), 0 0 18px rgba(255, 0, 0, 0.42), inset 0 0 16px rgba(255, 0, 0, 0.08); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); color: #ffffff; pointer-events: none; transition: top 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease; }
+#descarga-progreso-widget.con-admin { top: calc(126px + env(safe-area-inset-top, 0px)); }
+#descarga-progreso-widget.visible { display: block; animation: descargaWidgetEntrada 0.48s cubic-bezier(0.22, 1, 0.36, 1) both; }
+#descarga-progreso-widget.saliendo { animation: descargaWidgetSalida 0.42s ease-in forwards; }
+#descarga-progreso-widget.completado { border-color: #00ff66; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.82), 0 0 20px rgba(0, 255, 102, 0.45), inset 0 0 16px rgba(0, 255, 102, 0.08); }
+#descarga-progreso-widget.alerta-estado { border-color: #ffcc00; box-shadow: 0 12px 30px rgba(0, 0, 0, 0.82), 0 0 18px rgba(255, 204, 0, 0.4); }
+@keyframes descargaWidgetEntrada { 0% { opacity: 0; transform: translate3d(125%, 0, 0) scale(0.94); } 70% { opacity: 1; transform: translate3d(-6px, 0, 0) scale(1.01); } 100% { opacity: 1; transform: translate3d(0, 0, 0) scale(1); } }
+@keyframes descargaWidgetSalida { from { opacity: 1; transform: translate3d(0, 0, 0) scale(1); } to { opacity: 0; transform: translate3d(125%, 0, 0) scale(0.95); } }
+@keyframes giroOrbitaDescarga { to { transform: rotate(360deg); } }
+@keyframes pulsoFlechaDescarga { 0%, 100% { transform: translateY(-2px); opacity: 0.85; } 50% { transform: translateY(2px); opacity: 1; } }
+@keyframes brilloBarraDescarga { 0% { transform: translateX(-100%); } 100% { transform: translateX(220%); } }
+.descarga-widget-top { display: flex; align-items: center; gap: 10px; }
+.descarga-orbita-wrap { position: relative; width: 34px; height: 34px; flex: 0 0 34px; display: flex; align-items: center; justify-content: center; }
+.descarga-orbita-ring { position: absolute; inset: 0; border-radius: 50%; border: 2px solid rgba(255, 0, 0, 0.22); border-top-color: #ff0000; border-right-color: #ff4d4d; animation: giroOrbitaDescarga 0.85s linear infinite; }
+.descarga-orbita-ring-inner { position: absolute; inset: 5px; border-radius: 50%; border: 1.5px dashed rgba(255, 80, 80, 0.55); animation: giroOrbitaDescarga 1.7s linear infinite reverse; }
+.descarga-orbita-icon { position: relative; z-index: 2; color: #ff2a2a; font-size: 13px; animation: pulsoFlechaDescarga 1s ease-in-out infinite; }
+#descarga-progreso-widget.completado .descarga-orbita-ring { border-color: #00ff66; animation: none; box-shadow: 0 0 10px rgba(0, 255, 102, 0.55); }
+#descarga-progreso-widget.completado .descarga-orbita-ring-inner { display: none; }
+#descarga-progreso-widget.completado .descarga-orbita-icon { color: #00ff66; animation: none; font-size: 15px; }
+#descarga-progreso-widget.alerta-estado .descarga-orbita-ring { border-color: #ffcc00; animation: none; }
+#descarga-progreso-widget.alerta-estado .descarga-orbita-ring-inner { display: none; }
+#descarga-progreso-widget.alerta-estado .descarga-orbita-icon { color: #ffcc00; animation: none; }
+.descarga-widget-info { flex: 1; min-width: 0; }
+.descarga-widget-header-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+.descarga-widget-titulo { color: #ffffff; font-size: 10.5px; font-weight: bold; letter-spacing: 0.7px; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.descarga-widget-pct { color: #ff4444; font-size: 10px; font-weight: bold; font-variant-numeric: tabular-nums; flex-shrink: 0; }
+#descarga-progreso-widget.completado .descarga-widget-pct { color: #00ff66; }
+#descarga-progreso-widget.alerta-estado .descarga-widget-pct { color: #ffcc00; }
+.descarga-widget-sub { margin-top: 2px; color: #bdbdbd; font-size: 9.5px; line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.descarga-widget-cerrar { pointer-events: auto; width: 20px; height: 20px; flex: 0 0 20px; border: none; border-radius: 50%; background: rgba(255, 255, 255, 0.07); color: #bbbbbb; font-size: 13px; line-height: 1; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.descarga-widget-cerrar:hover { background: rgba(255, 0, 0, 0.35); color: #ffffff; }
+.descarga-barra-pista { position: relative; width: 100%; height: 5px; margin-top: 9px; border-radius: 999px; background: rgba(255, 255, 255, 0.10); overflow: hidden; }
+.descarga-barra-relleno { position: relative; height: 100%; width: 0%; border-radius: 999px; background: linear-gradient(90deg, #990000, #ff0000, #ff5555); box-shadow: 0 0 10px rgba(255, 0, 0, 0.75); transition: width 0.22s ease-out, background 0.3s ease; overflow: hidden; }
+.descarga-barra-relleno::after { content: ''; position: absolute; inset: 0; width: 45%; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.65), transparent); animation: brilloBarraDescarga 1.15s ease-in-out infinite; }
+#descarga-progreso-widget.completado .descarga-barra-relleno { background: linear-gradient(90deg, #009944, #00ff66); box-shadow: 0 0 10px rgba(0, 255, 102, 0.75); }
+#descarga-progreso-widget.completado .descarga-barra-relleno::after { display: none; }
+#descarga-progreso-widget.alerta-estado .descarga-barra-relleno { background: #ffcc00; box-shadow: none; }
+#descarga-progreso-widget.alerta-estado .descarga-barra-relleno::after { display: none; }
+
 /* Alertas Web recientes sobre el mapa. */
 #alertas-mapa-container { position: absolute; top: calc(12px + env(safe-area-inset-top, 0px)); right: calc(10px + env(safe-area-inset-right, 0px)); z-index: 100001; width: min(62vw, 235px); max-height: 170px; overflow-y: auto; display: block; pointer-events: auto; scrollbar-width: thin; scrollbar-color: #ff0000 rgba(0, 0, 0, 0.35); }
 #alertas-mapa-container:empty { display: none; }
@@ -363,6 +403,24 @@ html, body { width: 100%; height: 100%; min-width: 0; min-height: 0; margin: 0; 
 <div id="modal-confirmacion-motor" class="modal-overlay"><div class="modal-box"><h3 style="color:#ffcc00;"><i class="fas fa-exclamation-triangle"></i> ATENCIÓN</h3><p style="margin-bottom:20px; font-weight:bold; color:#fff; font-size:15px;">¿ESTÁ SEGURO DE ENVIAR EL COMANDO?</p><button class="btn-descargar" onclick="confirmarComando()">ACEPTAR</button><button class="btn-cancelar" onclick="cerrarModales()">CANCELAR</button></div></div>
 <div id="modal-menu-mapa" class="modal-overlay"><div class="modal-box"><h3>Seleccionar Mapa</h3><button class="btn-cancelar" onclick="cambiarMapa('satelite')" style="margin-bottom:10px;">GOOGLE SATÉLITE (CALLES)</button><button class="btn-cancelar" onclick="cambiarMapa('normal')" style="margin-bottom:10px;">MAPA NORMAL (CALLES)</button><button class="btn-cancelar" onclick="cambiarMapa('oscuro')" style="margin-bottom:10px;">NOCTURNO ROJO (CALLES)</button><button class="btn-cancelar" onclick="cambiarMapa('relieve3d')" style="margin-bottom:10px;">CONDUCCIÓN 3D</button><button class="btn-descargar" onclick="cerrarModales()" style="margin-top:5px;">CERRAR</button></div></div>
 <div id="modal-descarga" class="modal-overlay"><div class="modal-box"><h3>Descargar Historial</h3><select id="rango-descarga" onchange="toggleFechasPersonalizadas()"><option value="hoy">Hoy</option><option value="ayer">Ayer</option><option value="semana">La semana pasada</option><option value="personalizado">Personalizar...</option></select><div id="fechas-personalizadas" style="display:none;"><label>Desde:</label><input type="datetime-local" id="fecha-desde"><label>Hasta:</label><input type="datetime-local" id="fecha-hasta"></div><button class="btn-descargar" onclick="ejecutarDescarga()">DESCARGAR EXCEL</button><button class="btn-cancelar" onclick="cerrarModales()">CANCELAR</button></div></div>
+<div id="descarga-progreso-widget" role="status" aria-live="polite">
+    <div class="descarga-widget-top">
+        <div class="descarga-orbita-wrap">
+            <span class="descarga-orbita-ring"></span>
+            <span class="descarga-orbita-ring-inner"></span>
+            <i id="descarga-widget-icono" class="fas fa-arrow-down descarga-orbita-icon"></i>
+        </div>
+        <div class="descarga-widget-info">
+            <div class="descarga-widget-header-row">
+                <span id="descarga-widget-titulo" class="descarga-widget-titulo">Descargando historial</span>
+                <span id="descarga-widget-pct" class="descarga-widget-pct">0%</span>
+            </div>
+            <div id="descarga-widget-sub" class="descarga-widget-sub">Preparando documento Excel...</div>
+        </div>
+        <button type="button" class="descarga-widget-cerrar" onclick="ocultarWidgetDescarga()" aria-label="Ocultar aviso de descarga">×</button>
+    </div>
+    <div class="descarga-barra-pista"><div id="descarga-barra-relleno" class="descarga-barra-relleno"></div></div>
+</div>
 <div id="modal-geocerca" class="modal-overlay"><div class="modal-box" style="max-width: 420px; max-height: 85vh; overflow-y: auto;"><h3><i class="fas fa-draw-polygon"></i> Gestión de Geocercas</h3><div style="text-align: left; margin-bottom: 15px; border-bottom: 1px solid rgba(255,0,0,0.3); padding-bottom: 10px;"><strong style="color: #ff0000; font-size: 14px; display: block; margin-bottom: 8px;">Nueva Geocerca</strong><label>Nombre de la Geocerca:</label><input type="text" id="geo-nombre" placeholder="Ej: Zona Residencial / Oficina"><label>Descripción:</label><input type="text" id="geo-desc" placeholder="Ej: Alerta de salida"><label>Radio de cobertura (Metros):</label><input type="number" id="geo-radio" value="200" min="10" placeholder="200"><button class="btn-descargar" onclick="guardarGeocerca()">CREAR Y GUARDAR GEOCERCA</button></div><div style="text-align: left;"><strong style="color: #ff0000; font-size: 14px; display: block; margin-bottom: 8px;">Geocercas Registradas</strong><div id="lista-geocercas" style="max-height: 160px; overflow-y: auto; font-size: 12px;"><p style="color: #888;">Cargando geocercas...</p></div></div><button class="btn-cancelar" onclick="cerrarModales()" style="margin-top: 15px;">CERRAR</button></div></div>
 
 <div id="modal-notificaciones" class="modal-overlay"><div class="modal-box" style="max-width: 440px; max-height: 88vh; overflow-y: auto;"><h3><i class="fas fa-bell"></i> ALERTAS GPS</h3><div style="text-align: left; margin-bottom: 16px; border-bottom: 1px solid rgba(255,0,0,0.35); padding-bottom: 12px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;"><strong style="color: #ff0000; font-size: 14px;"><i class="fas fa-list-alt"></i> Alertas Registradas</strong><button onclick="cargarNotificacionesRegistradas()" style="background: transparent; border: 1px solid rgba(255,0,0,0.5); color: #ff0000; border-radius: 4px; padding: 3px 7px; font-size: 10px; cursor: pointer;"><i class="fas fa-sync-alt"></i> Actualizar</button></div><div id="lista-notificaciones-servidor" style="max-height: 190px; overflow-y: auto; font-size: 12px;"><p style="color: #888;">Cargando reglas Web...</p></div></div><div style="background: rgba(255, 0, 0, 0.08); border: 1px solid rgba(255, 0, 0, 0.4); border-radius: 12px; padding: 12px; margin-bottom: 16px; text-align: left;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;"><strong style="color: #fff; font-size: 13px;"><i class="fas fa-desktop" style="color: #ff0000; margin-right: 4px;"></i> Canal Web</strong><span id="notif-estado-badge" class="notif-badge-estado notif-badge-default">Verificando</span></div><p style="font-size: 11px; color: #ccc; margin: 4px 0 10px 0; line-height: 1.3;">Las alertas Web son generadas por el servidor y aparecen dentro de Eagle Track GPS mientras esta cuenta está conectada.</p><div id="notif-estado-detalle" class="notif-estado-detalle">Verificando si el canal Web está habilitado...</div><div><button id="btn-probar-web" type="button" class="btn-cancelar" onclick="probarCanalNativo('web')" style="padding: 9px; font-size: 11px; margin-bottom: 0;"><i class="fas fa-desktop"></i> Probar Web</button></div></div><div style="text-align: left; margin-bottom: 16px; border-bottom: 1px solid rgba(255,0,0,0.3); padding-bottom: 12px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;"><strong style="color: #ff0000; font-size: 14px;"><i class="fas fa-plus-circle"></i> Nueva Regla de Alerta</strong><button type="button" onclick="cargarCanalesDisponibles(true)" style="background: transparent; border: 1px solid rgba(255, 0, 0, 0.5); color: #ff0000; border-radius: 4px; padding: 2px 6px; font-size: 10px; cursor: pointer;"><i class="fas fa-sync-alt"></i> Verificar canal</button></div><label><i class="fas fa-bolt" style="color: #ff0000;"></i> Tipo de Evento / Alerta:</label><select id="notif-tipo" onchange="actualizarDescripcionTipoNotificacion()" style="margin-bottom: 6px;"><option value="ignitionOn">Ignición ON (Motor Encendido)</option><option value="ignitionOff">Ignición OFF (Motor Apagado)</option><option value="deviceMoving">Vehículo en Movimiento</option><option value="deviceStopped">Vehículo Detenido</option><option value="deviceOverspeed">Exceso de Límite de Velocidad</option><option value="geofenceEnter">Entrada a Geocerca / Zona</option><option value="geofenceExit">Salida de Geocerca / Zona</option><option value="alarm">Alarma SOS / Pánico / Desconexión</option><option value="deviceOnline">Dispositivo En Línea (Señal GPS OK)</option><option value="deviceOffline">Dispositivo Fuera de Línea (Sin Señal)</option><option value="allEvents">Todos los Eventos</option></select><div id="notif-tipo-desc" class="notif-desc-box">Se enviará una alerta en tiempo real cada vez que la llave de contacto sea activada o el motor sea encendido.</div><div id="notif-extras-velocidad" style="display:none; margin-bottom: 10px;"><label><i class="fas fa-tachometer-alt" style="color:#ff0000;"></i> Límite de Velocidad (km/h):</label><input type="number" id="notif-limite-vel" placeholder="Ej: 80" value="80" min="10" max="250" style="margin-bottom: 5px;"></div><label><i class="fas fa-broadcast-tower" style="color: #ff0000;"></i> Canal de Envío:</label><div style="background: #000; border: 1px solid rgba(255,0,0,0.3); border-radius: 8px; padding: 8px; margin-bottom: 12px;"><label class="notif-canal-item" data-channel="web" style="margin-bottom: 0;"><input type="checkbox" id="notif-canal-web" checked><span><strong>Web</strong> (Aviso visible en la interfaz web conectada)</span></label></div><label class="notif-canal-item" style="margin-bottom: 14px; background: #151515;"><input type="checkbox" id="notif-always" checked><span><strong>Siempre activo:</strong> aplicar la regla sin depender de un calendario</span></label><button id="btn-guardar-alerta" class="btn-descargar" onclick="guardarNotificacionEagleTrack()"><i class="fas fa-save"></i> GUARDAR Y ACTIVAR ALERTA EN SERVIDOR</button></div><button class="btn-cancelar" onclick="cerrarModales()" style="margin-top: 15px;">CERRAR</button></div></div>
@@ -1202,6 +1260,7 @@ html, body { width: 100%; height: 100%; min-width: 0; min-height: 0; margin: 0; 
     }
     function cerrarSesion() {
         cerrarModales();
+        ocultarWidgetDescarga();
         eliminarCredencialesPersistentes();
         dispositivosAdmin = []; vehiculoAdminSeleccionadoId = null; ultimaSincronizacionAdmin = 0; ultimaLatitud = null; ultimaLongitud = null;
         document.getElementById('pantalla-mapa').style.display = 'none';
@@ -1318,7 +1377,11 @@ html, body { width: 100%; height: 100%; min-width: 0; min-height: 0; margin: 0; 
         });
     }
 
-    function generarArchivoXlsxHistorial(filas) {
+    function cederTurnoUI() {
+        return new Promise(resolve => setTimeout(resolve, 0));
+    }
+
+    async function generarArchivoXlsxHistorial(filas, alAvanzar = null) {
         const MAX_FILAS_POR_HOJA = 60000;
         const bloques = [];
         for (let i = 0; i < filas.length; i += MAX_FILAS_POR_HOJA) {
@@ -1329,8 +1392,10 @@ html, body { width: 100%; height: 100%; min-width: 0; min-height: 0; margin: 0; 
         const overridesHojas = [];
         const entradasWorkbook = [];
         const relsWorkbook = [];
+        let procesadasGlobal = 0;
 
-        bloques.forEach((bloque, idxHoja) => {
+        for (let idxHoja = 0; idxHoja < bloques.length; idxHoja++) {
+            const bloque = bloques[idxHoja];
             const numHoja = idxHoja + 1;
             const nombreHoja = numHoja === 1 ? 'Historial GPS' : `Historial GPS ${numHoja}`;
             overridesHojas.push(`<Override PartName="/xl/worksheets/sheet${numHoja}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`);
@@ -1351,7 +1416,8 @@ html, body { width: 100%; height: 100%; min-width: 0; min-height: 0; margin: 0; 
                 '</row>'
             );
 
-            bloque.forEach((fila, idxFila) => {
+            for (let idxFila = 0; idxFila < bloque.length; idxFila++) {
+                const fila = bloque[idxFila];
                 const r = idxFila + 2;
                 const rId = `rId${idxFila + 1}`;
                 const urlEscapada = escaparXmlExcel(fila.urlMapa);
@@ -1366,7 +1432,12 @@ html, body { width: 100%; height: 100%; min-width: 0; min-height: 0; margin: 0; 
                 );
                 hipervinculosXml.push(`<hyperlink ref="C${r}" r:id="${rId}" tooltip="Abrir ubicación en Google Maps"/>`);
                 relsHojaXml.push(`<Relationship Id="${rId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="${urlEscapada}" TargetMode="External"/>`);
-            });
+                procesadasGlobal++;
+                if (procesadasGlobal % 600 === 0) {
+                    if (alAvanzar) alAvanzar(procesadasGlobal, filas.length);
+                    await cederTurnoUI();
+                }
+            }
 
             const xmlHoja =
                 '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
@@ -1388,7 +1459,7 @@ html, body { width: 100%; height: 100%; min-width: 0; min-height: 0; margin: 0; 
 
             archivos.push({ nombre: `xl/worksheets/sheet${numHoja}.xml`, contenido: xmlHoja });
             archivos.push({ nombre: `xl/worksheets/_rels/sheet${numHoja}.xml.rels`, contenido: xmlRelsHoja });
-        });
+        }
 
         const idEstilos = bloques.length + 1;
         relsWorkbook.push(`<Relationship Id="rId${idEstilos}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>`);
@@ -1458,18 +1529,136 @@ html, body { width: 100%; height: 100%; min-width: 0; min-height: 0; margin: 0; 
         return empaquetarZipSinCompresion(archivos);
     }
 
+    let descargaHistorialEnCurso = false;
+    let temporizadorCierreWidgetDescarga = null;
+
+    function formatearTamanoBytes(bytes) {
+        if (bytes < 1024) return `${bytes} B`;
+        if (bytes < 1048576) return `${(bytes / 1024).toFixed(0)} KB`;
+        return `${(bytes / 1048576).toFixed(1)} MB`;
+    }
+
+    function mostrarEstadoWidgetDescarga({ titulo, subtitulo, porcentaje, modo = 'cargando' }) {
+        const widget = document.getElementById('descarga-progreso-widget');
+        if (!widget) return;
+        clearTimeout(temporizadorCierreWidgetDescarga);
+        widget.classList.toggle('con-admin', esCuentaAdministradora());
+        widget.classList.remove('saliendo', 'completado', 'alerta-estado');
+        if (modo === 'completado') widget.classList.add('completado');
+        else if (modo === 'alerta') widget.classList.add('alerta-estado');
+
+        const icono = document.getElementById('descarga-widget-icono');
+        if (icono) {
+            icono.className = modo === 'completado'
+                ? 'fas fa-check descarga-orbita-icon'
+                : modo === 'alerta'
+                    ? 'fas fa-exclamation descarga-orbita-icon'
+                    : 'fas fa-arrow-down descarga-orbita-icon';
+        }
+        document.getElementById('descarga-widget-titulo').textContent = titulo;
+        document.getElementById('descarga-widget-sub').textContent = subtitulo;
+        const pct = Math.max(0, Math.min(100, Math.round(porcentaje)));
+        document.getElementById('descarga-widget-pct').textContent = `${pct}%`;
+        document.getElementById('descarga-barra-relleno').style.width = `${pct}%`;
+        if (!widget.classList.contains('visible')) widget.classList.add('visible');
+
+        if (modo === 'completado' || modo === 'alerta') {
+            temporizadorCierreWidgetDescarga = setTimeout(() => ocultarWidgetDescarga(), 3600);
+        }
+    }
+
+    function ocultarWidgetDescarga() {
+        const widget = document.getElementById('descarga-progreso-widget');
+        if (!widget || !widget.classList.contains('visible')) return;
+        clearTimeout(temporizadorCierreWidgetDescarga);
+        widget.classList.add('saliendo');
+        setTimeout(() => {
+            widget.classList.remove('visible', 'saliendo', 'completado', 'alerta-estado');
+        }, 420);
+    }
+
+    async function leerJsonConProgreso(response, alRecibirBytes) {
+        if (!response.body || typeof response.body.getReader !== 'function') {
+            return response.json();
+        }
+        const reader = response.body.getReader();
+        const total = Number(response.headers.get('Content-Length')) || 0;
+        const partes = [];
+        let recibidos = 0;
+        while (true) {
+            const { done, value } = await reader.read();
+            if (done) break;
+            if (value) {
+                partes.push(value);
+                recibidos += value.byteLength;
+                if (alRecibirBytes) alRecibirBytes(recibidos, total);
+            }
+        }
+        const completo = new Uint8Array(recibidos);
+        let offset = 0;
+        for (const parte of partes) {
+            completo.set(parte, offset);
+            offset += parte.byteLength;
+        }
+        return JSON.parse(new TextDecoder('utf-8').decode(completo));
+    }
+
     async function ejecutarDescarga() {
-        const rango = document.getElementById('rango-descarga').value; const fechas = obtenerFechasISO(rango);
+        const rango = document.getElementById('rango-descarga').value;
+        const fechas = obtenerFechasISO(rango);
         if (!fechas) { mostrarAlertaPersonalizada('Por favor selecciona correctamente las fechas.'); return; }
-        const resultado = document.getElementById('resultado'); if (resultado) resultado.innerText = 'Preparando descarga de historial...';
+
+        document.getElementById('modal-descarga').style.display = 'none';
+        if (descargaHistorialEnCurso) {
+            const widget = document.getElementById('descarga-progreso-widget');
+            if (widget && !widget.classList.contains('visible')) widget.classList.add('visible');
+            return;
+        }
+
+        descargaHistorialEnCurso = true;
+        const resultado = document.getElementById('resultado');
+        if (resultado) resultado.innerText = 'Preparando descarga de historial...';
+        mostrarEstadoWidgetDescarga({
+            titulo: 'Descargando historial',
+            subtitulo: 'Conectando con el servidor GPS...',
+            porcentaje: 8
+        });
+
         try {
-            const dispResp = await fetch(`${EAGLE_TRACK_API_ORIGIN}/api/devices`, { headers: authHeaders() }); const todosDispositivos = await dispResp.json(); const dispositivos = (esCuentaAdministradora() && vehiculoAdminSeleccionadoId) ? todosDispositivos.filter(d => String(d.id) === String(vehiculoAdminSeleccionadoId)) : todosDispositivos;
+            const dispResp = await fetch(`${EAGLE_TRACK_API_ORIGIN}/api/devices`, { headers: authHeaders() });
+            const todosDispositivos = await dispResp.json();
+            const dispositivos = (esCuentaAdministradora() && vehiculoAdminSeleccionadoId)
+                ? todosDispositivos.filter(d => String(d.id) === String(vehiculoAdminSeleccionadoId))
+                : todosDispositivos;
+
+            const totalDisp = Math.max(dispositivos.length, 1);
             const filasHistorial = [];
-            for (const disp of dispositivos) {
+
+            for (let idxDisp = 0; idxDisp < dispositivos.length; idxDisp++) {
+                const disp = dispositivos[idxDisp];
+                const baseInicio = 14 + (idxDisp / totalDisp) * 56;
+                const baseFin = 14 + ((idxDisp + 1) / totalDisp) * 56;
+
+                mostrarEstadoWidgetDescarga({
+                    titulo: 'Descargando historial',
+                    subtitulo: `Recibiendo ruta de ${disp.name || 'vehículo'}...`,
+                    porcentaje: baseInicio
+                });
+
                 const posResp = await fetch(`${EAGLE_TRACK_API_ORIGIN}/api/positions?deviceId=${disp.id}&from=${encodeURIComponent(fechas.from)}&to=${encodeURIComponent(fechas.to)}`, { headers: authHeaders() });
                 if (!posResp.ok) continue;
-                const posiciones = await posResp.json();
-                posiciones.forEach(p => {
+
+                const posiciones = await leerJsonConProgreso(posResp, (recibidos, total) => {
+                    const fraccion = total > 0 ? Math.min(recibidos / total, 1) : (1 - Math.exp(-recibidos / 350000));
+                    mostrarEstadoWidgetDescarga({
+                        titulo: 'Descargando historial',
+                        subtitulo: `Descargando datos (${formatearTamanoBytes(recibidos)})...`,
+                        porcentaje: baseInicio + fraccion * (baseFin - baseInicio)
+                    });
+                });
+
+                for (let i = 0; i < posiciones.length; i++) {
+                    const p = posiciones[i];
                     const velocidadKmh = p.speed !== undefined ? (p.speed * 1.852).toFixed(1) : '0.0';
                     const fechaLocal = new Date(p.deviceTime).toLocaleString().replace(/,/g, '');
                     const ignicionTxt = p.attributes?.ignition ? 'ENCENDIDO' : 'APAGADO';
@@ -1481,10 +1670,43 @@ html, body { width: 100%; height: 100%; min-width: 0; min-height: 0; margin: 0; 
                         velocidad: velocidadKmh,
                         ignicion: ignicionTxt
                     });
-                });
+                    if ((i + 1) % 800 === 0) await cederTurnoUI();
+                }
             }
-            if (!filasHistorial.length) { mostrarAlertaPersonalizada('No se encontraron posiciones en el rango seleccionado.'); if (resultado) resultado.innerText = 'Sin datos para descargar.'; return; }
-            const blob = generarArchivoXlsxHistorial(filasHistorial);
+
+            if (!filasHistorial.length) {
+                if (resultado) resultado.innerText = 'Sin datos para descargar.';
+                mostrarEstadoWidgetDescarga({
+                    titulo: 'Sin registros',
+                    subtitulo: 'No hay ubicaciones en ese rango de fechas.',
+                    porcentaje: 100,
+                    modo: 'alerta'
+                });
+                return;
+            }
+
+            mostrarEstadoWidgetDescarga({
+                titulo: 'Generando Excel',
+                subtitulo: `Armando ${filasHistorial.length} enlaces de Google Maps...`,
+                porcentaje: 74
+            });
+            await cederTurnoUI();
+
+            const blob = await generarArchivoXlsxHistorial(filasHistorial, (actual, total) => {
+                mostrarEstadoWidgetDescarga({
+                    titulo: 'Generando Excel',
+                    subtitulo: `Procesando ${actual} de ${total} ubicaciones...`,
+                    porcentaje: 74 + (actual / Math.max(total, 1)) * 22
+                });
+            });
+
+            mostrarEstadoWidgetDescarga({
+                titulo: 'Guardando documento',
+                subtitulo: `Historial_GPS_${rango}.xlsx`,
+                porcentaje: 98
+            });
+            await cederTurnoUI();
+
             const link = document.createElement('a');
             const urlBlob = URL.createObjectURL(blob);
             link.href = urlBlob;
@@ -1492,9 +1714,26 @@ html, body { width: 100%; height: 100%; min-width: 0; min-height: 0; margin: 0; 
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
-            URL.revokeObjectURL(urlBlob);
-            if (resultado) resultado.innerText = 'Descarga completada con éxito.'; cerrarModales(); mostrarAlertaPersonalizada('Descarga completada. El archivo ha sido guardado.');
-        } catch (error) { mostrarAlertaPersonalizada('Error al descargar los datos: ' + error); if (resultado) resultado.innerText = 'Error en la descarga: ' + error; }
+            setTimeout(() => URL.revokeObjectURL(urlBlob), 60000);
+
+            if (resultado) resultado.innerText = 'Descarga completada con éxito.';
+            mostrarEstadoWidgetDescarga({
+                titulo: 'Descarga completada',
+                subtitulo: `Historial_GPS_${rango}.xlsx (${filasHistorial.length} puntos)`,
+                porcentaje: 100,
+                modo: 'completado'
+            });
+        } catch (error) {
+            if (resultado) resultado.innerText = 'Error en la descarga: ' + error;
+            mostrarEstadoWidgetDescarga({
+                titulo: 'Error en descarga',
+                subtitulo: 'No se pudo completar el archivo Excel.',
+                porcentaje: 100,
+                modo: 'alerta'
+            });
+        } finally {
+            descargaHistorialEnCurso = false;
+        }
     }
 
     async function abrirModalGeocerca() { document.getElementById('modal-geocerca').style.display = 'flex'; await cargarGeocercas(); }
