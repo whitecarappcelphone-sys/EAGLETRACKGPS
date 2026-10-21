@@ -362,7 +362,7 @@ html, body { width: 100%; height: 100%; min-width: 0; min-height: 0; margin: 0; 
 <div id="modal-menu-motor" class="modal-overlay"><div class="modal-box"><h3>Control de Motor</h3><button class="btn-descargar" onclick="iniciarComando('engineStop')" style="background:#990000; border:1px solid #ff0000;">APAGAR VEHÍCULO</button><button class="btn-descargar" onclick="iniciarComando('engineResume')" style="background:#007722; border:1px solid #00ff66;">ENCENDER VEHÍCULO</button><button class="btn-cancelar" onclick="cerrarModales()">CANCELAR</button></div></div>
 <div id="modal-confirmacion-motor" class="modal-overlay"><div class="modal-box"><h3 style="color:#ffcc00;"><i class="fas fa-exclamation-triangle"></i> ATENCIÓN</h3><p style="margin-bottom:20px; font-weight:bold; color:#fff; font-size:15px;">¿ESTÁ SEGURO DE ENVIAR EL COMANDO?</p><button class="btn-descargar" onclick="confirmarComando()">ACEPTAR</button><button class="btn-cancelar" onclick="cerrarModales()">CANCELAR</button></div></div>
 <div id="modal-menu-mapa" class="modal-overlay"><div class="modal-box"><h3>Seleccionar Mapa</h3><button class="btn-cancelar" onclick="cambiarMapa('satelite')" style="margin-bottom:10px;">GOOGLE SATÉLITE (CALLES)</button><button class="btn-cancelar" onclick="cambiarMapa('normal')" style="margin-bottom:10px;">MAPA NORMAL (CALLES)</button><button class="btn-cancelar" onclick="cambiarMapa('oscuro')" style="margin-bottom:10px;">NOCTURNO ROJO (CALLES)</button><button class="btn-cancelar" onclick="cambiarMapa('relieve3d')" style="margin-bottom:10px;">CONDUCCIÓN 3D</button><button class="btn-descargar" onclick="cerrarModales()" style="margin-top:5px;">CERRAR</button></div></div>
-<div id="modal-descarga" class="modal-overlay"><div class="modal-box"><h3>Descargar Historial</h3><select id="rango-descarga" onchange="toggleFechasPersonalizadas()"><option value="hoy">Hoy</option><option value="ayer">Ayer</option><option value="semana">La semana pasada</option><option value="personalizado">Personalizar...</option></select><div id="fechas-personalizadas" style="display:none;"><label>Desde:</label><input type="datetime-local" id="fecha-desde"><label>Hasta:</label><input type="datetime-local" id="fecha-hasta"></div><button class="btn-descargar" onclick="ejecutarDescarga()">DESCARGAR EXCEL (CSV)</button><button class="btn-cancelar" onclick="cerrarModales()">CANCELAR</button></div></div>
+<div id="modal-descarga" class="modal-overlay"><div class="modal-box"><h3>Descargar Historial</h3><select id="rango-descarga" onchange="toggleFechasPersonalizadas()"><option value="hoy">Hoy</option><option value="ayer">Ayer</option><option value="semana">La semana pasada</option><option value="personalizado">Personalizar...</option></select><div id="fechas-personalizadas" style="display:none;"><label>Desde:</label><input type="datetime-local" id="fecha-desde"><label>Hasta:</label><input type="datetime-local" id="fecha-hasta"></div><button class="btn-descargar" onclick="ejecutarDescarga()">DESCARGAR EXCEL</button><button class="btn-cancelar" onclick="cerrarModales()">CANCELAR</button></div></div>
 <div id="modal-geocerca" class="modal-overlay"><div class="modal-box" style="max-width: 420px; max-height: 85vh; overflow-y: auto;"><h3><i class="fas fa-draw-polygon"></i> Gestión de Geocercas</h3><div style="text-align: left; margin-bottom: 15px; border-bottom: 1px solid rgba(255,0,0,0.3); padding-bottom: 10px;"><strong style="color: #ff0000; font-size: 14px; display: block; margin-bottom: 8px;">Nueva Geocerca</strong><label>Nombre de la Geocerca:</label><input type="text" id="geo-nombre" placeholder="Ej: Zona Residencial / Oficina"><label>Descripción:</label><input type="text" id="geo-desc" placeholder="Ej: Alerta de salida"><label>Radio de cobertura (Metros):</label><input type="number" id="geo-radio" value="200" min="10" placeholder="200"><button class="btn-descargar" onclick="guardarGeocerca()">CREAR Y GUARDAR GEOCERCA</button></div><div style="text-align: left;"><strong style="color: #ff0000; font-size: 14px; display: block; margin-bottom: 8px;">Geocercas Registradas</strong><div id="lista-geocercas" style="max-height: 160px; overflow-y: auto; font-size: 12px;"><p style="color: #888;">Cargando geocercas...</p></div></div><button class="btn-cancelar" onclick="cerrarModales()" style="margin-top: 15px;">CERRAR</button></div></div>
 
 <div id="modal-notificaciones" class="modal-overlay"><div class="modal-box" style="max-width: 440px; max-height: 88vh; overflow-y: auto;"><h3><i class="fas fa-bell"></i> ALERTAS GPS</h3><div style="text-align: left; margin-bottom: 16px; border-bottom: 1px solid rgba(255,0,0,0.35); padding-bottom: 12px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;"><strong style="color: #ff0000; font-size: 14px;"><i class="fas fa-list-alt"></i> Alertas Registradas</strong><button onclick="cargarNotificacionesRegistradas()" style="background: transparent; border: 1px solid rgba(255,0,0,0.5); color: #ff0000; border-radius: 4px; padding: 3px 7px; font-size: 10px; cursor: pointer;"><i class="fas fa-sync-alt"></i> Actualizar</button></div><div id="lista-notificaciones-servidor" style="max-height: 190px; overflow-y: auto; font-size: 12px;"><p style="color: #888;">Cargando reglas Web...</p></div></div><div style="background: rgba(255, 0, 0, 0.08); border: 1px solid rgba(255, 0, 0, 0.4); border-radius: 12px; padding: 12px; margin-bottom: 16px; text-align: left;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;"><strong style="color: #fff; font-size: 13px;"><i class="fas fa-desktop" style="color: #ff0000; margin-right: 4px;"></i> Canal Web</strong><span id="notif-estado-badge" class="notif-badge-estado notif-badge-default">Verificando</span></div><p style="font-size: 11px; color: #ccc; margin: 4px 0 10px 0; line-height: 1.3;">Las alertas Web son generadas por el servidor y aparecen dentro de Eagle Track GPS mientras esta cuenta está conectada.</p><div id="notif-estado-detalle" class="notif-estado-detalle">Verificando si el canal Web está habilitado...</div><div><button id="btn-probar-web" type="button" class="btn-cancelar" onclick="probarCanalNativo('web')" style="padding: 9px; font-size: 11px; margin-bottom: 0;"><i class="fas fa-desktop"></i> Probar Web</button></div></div><div style="text-align: left; margin-bottom: 16px; border-bottom: 1px solid rgba(255,0,0,0.3); padding-bottom: 12px;"><div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;"><strong style="color: #ff0000; font-size: 14px;"><i class="fas fa-plus-circle"></i> Nueva Regla de Alerta</strong><button type="button" onclick="cargarCanalesDisponibles(true)" style="background: transparent; border: 1px solid rgba(255, 0, 0, 0.5); color: #ff0000; border-radius: 4px; padding: 2px 6px; font-size: 10px; cursor: pointer;"><i class="fas fa-sync-alt"></i> Verificar canal</button></div><label><i class="fas fa-bolt" style="color: #ff0000;"></i> Tipo de Evento / Alerta:</label><select id="notif-tipo" onchange="actualizarDescripcionTipoNotificacion()" style="margin-bottom: 6px;"><option value="ignitionOn">Ignición ON (Motor Encendido)</option><option value="ignitionOff">Ignición OFF (Motor Apagado)</option><option value="deviceMoving">Vehículo en Movimiento</option><option value="deviceStopped">Vehículo Detenido</option><option value="deviceOverspeed">Exceso de Límite de Velocidad</option><option value="geofenceEnter">Entrada a Geocerca / Zona</option><option value="geofenceExit">Salida de Geocerca / Zona</option><option value="alarm">Alarma SOS / Pánico / Desconexión</option><option value="deviceOnline">Dispositivo En Línea (Señal GPS OK)</option><option value="deviceOffline">Dispositivo Fuera de Línea (Sin Señal)</option><option value="allEvents">Todos los Eventos</option></select><div id="notif-tipo-desc" class="notif-desc-box">Se enviará una alerta en tiempo real cada vez que la llave de contacto sea activada o el motor sea encendido.</div><div id="notif-extras-velocidad" style="display:none; margin-bottom: 10px;"><label><i class="fas fa-tachometer-alt" style="color:#ff0000;"></i> Límite de Velocidad (km/h):</label><input type="number" id="notif-limite-vel" placeholder="Ej: 80" value="80" min="10" max="250" style="margin-bottom: 5px;"></div><label><i class="fas fa-broadcast-tower" style="color: #ff0000;"></i> Canal de Envío:</label><div style="background: #000; border: 1px solid rgba(255,0,0,0.3); border-radius: 8px; padding: 8px; margin-bottom: 12px;"><label class="notif-canal-item" data-channel="web" style="margin-bottom: 0;"><input type="checkbox" id="notif-canal-web" checked><span><strong>Web</strong> (Aviso visible en la interfaz web conectada)</span></label></div><label class="notif-canal-item" style="margin-bottom: 14px; background: #151515;"><input type="checkbox" id="notif-always" checked><span><strong>Siempre activo:</strong> aplicar la regla sin depender de un calendario</span></label><button id="btn-guardar-alerta" class="btn-descargar" onclick="guardarNotificacionEagleTrack()"><i class="fas fa-save"></i> GUARDAR Y ACTIVAR ALERTA EN SERVIDOR</button></div><button class="btn-cancelar" onclick="cerrarModales()" style="margin-top: 15px;">CERRAR</button></div></div>
@@ -1227,21 +1227,272 @@ html, body { width: 100%; height: 100%; min-width: 0; min-height: 0; margin: 0; 
         else { const valDesde = document.getElementById('fecha-desde').value; const valHasta = document.getElementById('fecha-hasta').value; if (!valDesde || !valHasta) return null; fromDate = new Date(valDesde); toDate = new Date(valHasta); }
         return { from: fromDate.toISOString(), to: toDate.toISOString() };
     }
+    function escaparXmlExcel(valor) {
+        return String(valor ?? '').replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '').replace(/[&<>"']/g, ch => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;' })[ch]);
+    }
+
+    function calcularCrc32Excel(bytes) {
+        if (!window.__tablaCrc32Excel) {
+            const tabla = new Uint32Array(256);
+            for (let n = 0; n < 256; n++) {
+                let c = n;
+                for (let k = 0; k < 8; k++) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+                tabla[n] = c >>> 0;
+            }
+            window.__tablaCrc32Excel = tabla;
+        }
+        const tabla = window.__tablaCrc32Excel;
+        let crc = 0 ^ (-1);
+        for (let i = 0; i < bytes.length; i++) crc = (crc >>> 8) ^ tabla[(crc ^ bytes[i]) & 0xFF];
+        return (crc ^ (-1)) >>> 0;
+    }
+
+    function empaquetarZipSinCompresion(archivos) {
+        const encoder = new TextEncoder();
+        const entradasLocales = [];
+        const entradasCentrales = [];
+        let desplazamiento = 0;
+
+        archivos.forEach(item => {
+            const nombreBytes = encoder.encode(item.nombre);
+            const contenidoBytes = encoder.encode(item.contenido);
+            const crc = calcularCrc32Excel(contenidoBytes);
+            const tam = contenidoBytes.length;
+
+            const local = new Uint8Array(30 + nombreBytes.length + tam);
+            const dvLocal = new DataView(local.buffer);
+            dvLocal.setUint32(0, 0x04034B50, true);
+            dvLocal.setUint16(4, 20, true);
+            dvLocal.setUint16(6, 0x0800, true);
+            dvLocal.setUint16(8, 0, true);
+            dvLocal.setUint16(10, 0, true);
+            dvLocal.setUint16(12, 0x21, true);
+            dvLocal.setUint32(14, crc, true);
+            dvLocal.setUint32(18, tam, true);
+            dvLocal.setUint32(22, tam, true);
+            dvLocal.setUint16(26, nombreBytes.length, true);
+            dvLocal.setUint16(28, 0, true);
+            local.set(nombreBytes, 30);
+            local.set(contenidoBytes, 30 + nombreBytes.length);
+            entradasLocales.push(local);
+
+            const central = new Uint8Array(46 + nombreBytes.length);
+            const dvCentral = new DataView(central.buffer);
+            dvCentral.setUint32(0, 0x02014B50, true);
+            dvCentral.setUint16(4, 20, true);
+            dvCentral.setUint16(6, 20, true);
+            dvCentral.setUint16(8, 0x0800, true);
+            dvCentral.setUint16(10, 0, true);
+            dvCentral.setUint16(12, 0, true);
+            dvCentral.setUint16(14, 0x21, true);
+            dvCentral.setUint32(16, crc, true);
+            dvCentral.setUint32(20, tam, true);
+            dvCentral.setUint32(24, tam, true);
+            dvCentral.setUint16(28, nombreBytes.length, true);
+            dvCentral.setUint16(30, 0, true);
+            dvCentral.setUint16(32, 0, true);
+            dvCentral.setUint16(34, 0, true);
+            dvCentral.setUint16(36, 0, true);
+            dvCentral.setUint32(38, 0, true);
+            dvCentral.setUint32(42, desplazamiento, true);
+            central.set(nombreBytes, 46);
+            entradasCentrales.push(central);
+
+            desplazamiento += local.length;
+        });
+
+        const tamDirectorioCentral = entradasCentrales.reduce((acc, b) => acc + b.length, 0);
+        const cierre = new Uint8Array(22);
+        const dvCierre = new DataView(cierre.buffer);
+        dvCierre.setUint32(0, 0x06054B50, true);
+        dvCierre.setUint16(4, 0, true);
+        dvCierre.setUint16(6, 0, true);
+        dvCierre.setUint16(8, archivos.length, true);
+        dvCierre.setUint16(10, archivos.length, true);
+        dvCierre.setUint32(12, tamDirectorioCentral, true);
+        dvCierre.setUint32(16, desplazamiento, true);
+        dvCierre.setUint16(20, 0, true);
+
+        return new Blob([...entradasLocales, ...entradasCentrales, cierre], {
+            type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        });
+    }
+
+    function generarArchivoXlsxHistorial(filas) {
+        const MAX_FILAS_POR_HOJA = 60000;
+        const bloques = [];
+        for (let i = 0; i < filas.length; i += MAX_FILAS_POR_HOJA) {
+            bloques.push(filas.slice(i, i + MAX_FILAS_POR_HOJA));
+        }
+
+        const archivos = [];
+        const overridesHojas = [];
+        const entradasWorkbook = [];
+        const relsWorkbook = [];
+
+        bloques.forEach((bloque, idxHoja) => {
+            const numHoja = idxHoja + 1;
+            const nombreHoja = numHoja === 1 ? 'Historial GPS' : `Historial GPS ${numHoja}`;
+            overridesHojas.push(`<Override PartName="/xl/worksheets/sheet${numHoja}.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>`);
+            entradasWorkbook.push(`<sheet name="${escaparXmlExcel(nombreHoja)}" sheetId="${numHoja}" r:id="rId${numHoja}"/>`);
+            relsWorkbook.push(`<Relationship Id="rId${numHoja}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet${numHoja}.xml"/>`);
+
+            const filasXml = [];
+            const hipervinculosXml = [];
+            const relsHojaXml = [];
+
+            filasXml.push(
+                '<row r="1" ht="22" customHeight="1">' +
+                '<c r="A1" t="inlineStr" s="1"><is><t>Vehículo</t></is></c>' +
+                '<c r="B1" t="inlineStr" s="1"><is><t>Fecha/Hora</t></is></c>' +
+                '<c r="C1" t="inlineStr" s="1"><is><t>Ubicación (Google Maps)</t></is></c>' +
+                '<c r="D1" t="inlineStr" s="1"><is><t>Velocidad (km/h)</t></is></c>' +
+                '<c r="E1" t="inlineStr" s="1"><is><t>Ignición</t></is></c>' +
+                '</row>'
+            );
+
+            bloque.forEach((fila, idxFila) => {
+                const r = idxFila + 2;
+                const rId = `rId${idxFila + 1}`;
+                const urlEscapada = escaparXmlExcel(fila.urlMapa);
+                filasXml.push(
+                    `<row r="${r}">` +
+                    `<c r="A${r}" t="inlineStr" s="0"><is><t>${escaparXmlExcel(fila.vehiculo)}</t></is></c>` +
+                    `<c r="B${r}" t="inlineStr" s="0"><is><t>${escaparXmlExcel(fila.fechaHora)}</t></is></c>` +
+                    `<c r="C${r}" t="inlineStr" s="2"><is><t>${urlEscapada}</t></is></c>` +
+                    `<c r="D${r}" t="inlineStr" s="0"><is><t>${escaparXmlExcel(fila.velocidad)}</t></is></c>` +
+                    `<c r="E${r}" t="inlineStr" s="0"><is><t>${escaparXmlExcel(fila.ignicion)}</t></is></c>` +
+                    `</row>`
+                );
+                hipervinculosXml.push(`<hyperlink ref="C${r}" r:id="${rId}" tooltip="Abrir ubicación en Google Maps"/>`);
+                relsHojaXml.push(`<Relationship Id="${rId}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/hyperlink" Target="${urlEscapada}" TargetMode="External"/>`);
+            });
+
+            const xmlHoja =
+                '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+                '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+                '<cols>' +
+                '<col min="1" max="1" width="18" customWidth="1"/>' +
+                '<col min="2" max="2" width="24" customWidth="1"/>' +
+                '<col min="3" max="3" width="52" customWidth="1"/>' +
+                '<col min="4" max="4" width="18" customWidth="1"/>' +
+                '<col min="5" max="5" width="15" customWidth="1"/>' +
+                '</cols>' +
+                `<sheetData>${filasXml.join('')}</sheetData>` +
+                (hipervinculosXml.length ? `<hyperlinks>${hipervinculosXml.join('')}</hyperlinks>` : '') +
+                '</worksheet>';
+
+            const xmlRelsHoja =
+                '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+                `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${relsHojaXml.join('')}</Relationships>`;
+
+            archivos.push({ nombre: `xl/worksheets/sheet${numHoja}.xml`, contenido: xmlHoja });
+            archivos.push({ nombre: `xl/worksheets/_rels/sheet${numHoja}.xml.rels`, contenido: xmlRelsHoja });
+        });
+
+        const idEstilos = bloques.length + 1;
+        relsWorkbook.push(`<Relationship Id="rId${idEstilos}" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>`);
+
+        archivos.unshift(
+            {
+                nombre: '[Content_Types].xml',
+                contenido:
+                    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+                    '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">' +
+                    '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>' +
+                    '<Default Extension="xml" ContentType="application/xml"/>' +
+                    '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>' +
+                    overridesHojas.join('') +
+                    '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>' +
+                    '</Types>'
+            },
+            {
+                nombre: '_rels/.rels',
+                contenido:
+                    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+                    '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">' +
+                    '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>' +
+                    '</Relationships>'
+            },
+            {
+                nombre: 'xl/workbook.xml',
+                contenido:
+                    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+                    '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">' +
+                    `<sheets>${entradasWorkbook.join('')}</sheets>` +
+                    '</workbook>'
+            },
+            {
+                nombre: 'xl/_rels/workbook.xml.rels',
+                contenido:
+                    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+                    `<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">${relsWorkbook.join('')}</Relationships>`
+            },
+            {
+                nombre: 'xl/styles.xml',
+                contenido:
+                    '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>' +
+                    '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">' +
+                    '<fonts count="3">' +
+                    '<font><sz val="11"/><color rgb="FF111111"/><name val="Calibri"/></font>' +
+                    '<font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font>' +
+                    '<font><u/><sz val="11"/><color rgb="FF0563C1"/><name val="Calibri"/></font>' +
+                    '</fonts>' +
+                    '<fills count="3">' +
+                    '<fill><patternFill patternType="none"/></fill>' +
+                    '<fill><patternFill patternType="gray125"/></fill>' +
+                    '<fill><patternFill patternType="solid"><fgColor rgb="FFB30000"/><bgColor indexed="64"/></patternFill></fill>' +
+                    '</fills>' +
+                    '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>' +
+                    '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>' +
+                    '<cellXfs count="3">' +
+                    '<xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>' +
+                    '<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1" applyAlignment="1"><alignment horizontal="center" vertical="center"/></xf>' +
+                    '<xf numFmtId="0" fontId="2" fillId="0" borderId="0" xfId="0" applyFont="1"/>' +
+                    '</cellXfs>' +
+                    '<cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>' +
+                    '</styleSheet>'
+            }
+        );
+
+        return empaquetarZipSinCompresion(archivos);
+    }
+
     async function ejecutarDescarga() {
         const rango = document.getElementById('rango-descarga').value; const fechas = obtenerFechasISO(rango);
         if (!fechas) { mostrarAlertaPersonalizada('Por favor selecciona correctamente las fechas.'); return; }
         const resultado = document.getElementById('resultado'); if (resultado) resultado.innerText = 'Preparando descarga de historial...';
         try {
             const dispResp = await fetch(`${EAGLE_TRACK_API_ORIGIN}/api/devices`, { headers: authHeaders() }); const todosDispositivos = await dispResp.json(); const dispositivos = (esCuentaAdministradora() && vehiculoAdminSeleccionadoId) ? todosDispositivos.filter(d => String(d.id) === String(vehiculoAdminSeleccionadoId)) : todosDispositivos;
-            let csvContent = 'sep=;\nVehiculo;Fecha/Hora;Latitud;Longitud;Velocidad (km/h);Ignicion\n'; let datosEncontrados = false;
+            const filasHistorial = [];
             for (const disp of dispositivos) {
                 const posResp = await fetch(`${EAGLE_TRACK_API_ORIGIN}/api/positions?deviceId=${disp.id}&from=${encodeURIComponent(fechas.from)}&to=${encodeURIComponent(fechas.to)}`, { headers: authHeaders() });
                 if (!posResp.ok) continue;
-                const posiciones = await posResp.json(); if (posiciones.length) datosEncontrados = true;
-                posiciones.forEach(p => { const velocidadKmh = p.speed !== undefined ? (p.speed * 1.852).toFixed(1) : '0.0'; const fechaLocal = new Date(p.deviceTime).toLocaleString().replace(/,/g, ''); const ignicionTxt = p.attributes?.ignition ? 'ENCENDIDO' : 'APAGADO'; csvContent += `"${disp.name}";"${fechaLocal}";${p.latitude};${p.longitude};${velocidadKmh};"${ignicionTxt}"\n`; });
+                const posiciones = await posResp.json();
+                posiciones.forEach(p => {
+                    const velocidadKmh = p.speed !== undefined ? (p.speed * 1.852).toFixed(1) : '0.0';
+                    const fechaLocal = new Date(p.deviceTime).toLocaleString().replace(/,/g, '');
+                    const ignicionTxt = p.attributes?.ignition ? 'ENCENDIDO' : 'APAGADO';
+                    const urlMapa = `https://www.google.com/maps?q=${p.latitude},${p.longitude}`;
+                    filasHistorial.push({
+                        vehiculo: disp.name || 'SIN PLACA',
+                        fechaHora: fechaLocal,
+                        urlMapa,
+                        velocidad: velocidadKmh,
+                        ignicion: ignicionTxt
+                    });
+                });
             }
-            if (!datosEncontrados) { mostrarAlertaPersonalizada('No se encontraron posiciones en el rango seleccionado.'); if (resultado) resultado.innerText = 'Sin datos para descargar.'; return; }
-            const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' }); const link = document.createElement('a'); const urlBlob = URL.createObjectURL(blob); link.href = urlBlob; link.download = `Historial_GPS_${rango}.csv`; document.body.appendChild(link); link.click(); document.body.removeChild(link); URL.revokeObjectURL(urlBlob);
+            if (!filasHistorial.length) { mostrarAlertaPersonalizada('No se encontraron posiciones en el rango seleccionado.'); if (resultado) resultado.innerText = 'Sin datos para descargar.'; return; }
+            const blob = generarArchivoXlsxHistorial(filasHistorial);
+            const link = document.createElement('a');
+            const urlBlob = URL.createObjectURL(blob);
+            link.href = urlBlob;
+            link.download = `Historial_GPS_${rango}.xlsx`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(urlBlob);
             if (resultado) resultado.innerText = 'Descarga completada con éxito.'; cerrarModales(); mostrarAlertaPersonalizada('Descarga completada. El archivo ha sido guardado.');
         } catch (error) { mostrarAlertaPersonalizada('Error al descargar los datos: ' + error); if (resultado) resultado.innerText = 'Error en la descarga: ' + error; }
     }
