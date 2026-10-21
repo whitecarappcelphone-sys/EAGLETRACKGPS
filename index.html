@@ -62,6 +62,7 @@ html, body { width: 100%; height: 100%; min-width: 0; min-height: 0; margin: 0; 
 #tarjeta-gps { width: 100%; background: rgba(18, 18, 18, 0.85); border: 1px solid rgba(255, 0, 0, 0.35); border-radius: 16px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.6), 0 0 8px rgba(255, 0, 0, 0.2); overflow: visible; }
 .gps-tarjeta-cabecera { padding: 6px 15px; background: rgba(11, 11, 11, 0.65); display: flex; align-items: center; justify-content: space-between; gap: 10px; border-radius: 16px; border: 1px solid rgba(255, 0, 0, 0.35); }
 .gps-vehiculo-img { width: 170px; height: auto; max-height: 90px; object-fit: contain; background: transparent; border: none; padding: 0; box-shadow: none; flex-shrink: 0; filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5)); transform: scale(1.6); transform-origin: center left; margin-left: -50px; }
+.gps-vehiculo-img.icono-empresa { width: 82px; height: 82px; max-height: 82px; margin-left: 2px; transform: none; filter: drop-shadow(0 0 8px rgba(255, 0, 0, 0.55)); }
 .gps-vehiculo-info { display: flex; flex-direction: column; align-items: flex-end; text-align: right; flex-grow: 1; }
 .gps-vehiculo { color: #ff0000; font-size: 20px; font-weight: bold; line-height: 1.1; }
 .gps-vehiculo-marca { color: #cccccc; font-size: 13px; font-weight: bold; letter-spacing: 1px; text-transform: uppercase; margin: 2px 0; }
@@ -434,6 +435,7 @@ html, body { width: 100%; height: 100%; min-width: 0; min-height: 0; margin: 0; 
 
     const EAGLE_TRACK_API_ORIGIN = 'https://whitecargps.duckdns.org';
     const EMAIL_ADMINISTRADOR = 'administrador@gps.com';
+    const ICONO_EMPRESA_ADMIN = 'https://i.imgur.com/R89Vzcr.png';
     let dispositivosAdmin = [];
     let vehiculoAdminSeleccionadoId = null;
     let ultimaSincronizacionAdmin = 0;
@@ -539,10 +541,12 @@ html, body { width: 100%; height: 100%; min-width: 0; min-height: 0; margin: 0; 
 
     window.addEventListener('load', () => {
         precargarMapa3D();
+        actualizarOpcionEmpresaLogin();
         const sesionGuardada = obtenerCredencialesPersistentes();
         if (!sesionGuardada) return;
 
         document.getElementById('email').value = sesionGuardada.email;
+        actualizarOpcionEmpresaLogin();
         document.getElementById('password').value = sesionGuardada.password;
         document.getElementById('marca').value = sesionGuardada.marca;
         document.getElementById('tipo-vehiculo').value = sesionGuardada.tipoVehiculo;
@@ -574,13 +578,47 @@ html, body { width: 100%; height: 100%; min-width: 0; min-height: 0; margin: 0; 
 
     function mostrarAlertaPersonalizada(mensaje) { cerrarModales(); document.getElementById('texto-alerta').innerText = mensaje; document.getElementById('modal-alerta').style.display = 'flex'; }
     function abrirConfirmacionSesion() { cerrarModales(); document.getElementById('modal-confirmar-sesion').style.display = 'flex'; }
-    function confirmarCerrarSesion() { cerrarSesion(); }
+    function confirmarCerrarSesion() { cerrarModales(); cerrarSesion(); }
     function cerrarModales() { document.querySelectorAll('.modal-overlay').forEach(modal => modal.style.display = 'none'); comandoPendiente = null; }
 
     function esCuentaAdministradora() {
         const campoEmail = document.getElementById('email');
         return Boolean(campoEmail && campoEmail.value.trim().toLowerCase() === EMAIL_ADMINISTRADOR);
     }
+
+    function actualizarOpcionEmpresaLogin() {
+        const selectTipo = document.getElementById('tipo-vehiculo');
+        if (!selectTipo) return;
+        const esAdmin = esCuentaAdministradora();
+        let opcionEmpresa = document.getElementById('opcion-empresa-admin');
+
+        if (esAdmin) {
+            if (!opcionEmpresa) {
+                opcionEmpresa = document.createElement('option');
+                opcionEmpresa.id = 'opcion-empresa-admin';
+                opcionEmpresa.value = ICONO_EMPRESA_ADMIN;
+                opcionEmpresa.textContent = 'EMPRESA';
+                if (selectTipo.options.length > 1) {
+                    selectTipo.insertBefore(opcionEmpresa, selectTipo.options[1]);
+                } else {
+                    selectTipo.appendChild(opcionEmpresa);
+                }
+            }
+            opcionEmpresa.disabled = false;
+            opcionEmpresa.hidden = false;
+        } else if (opcionEmpresa) {
+            const estabaSeleccionada = selectTipo.value === ICONO_EMPRESA_ADMIN;
+            opcionEmpresa.remove();
+            if (estabaSeleccionada) selectTipo.value = '';
+        }
+    }
+
+    ['input', 'change', 'keyup', 'blur'].forEach(evento => {
+        document.getElementById('email').addEventListener(evento, actualizarOpcionEmpresaLogin);
+    });
+    ['pointerdown', 'touchstart', 'mousedown', 'focus'].forEach(evento => {
+        document.getElementById('tipo-vehiculo').addEventListener(evento, actualizarOpcionEmpresaLogin);
+    });
 
     function etiquetaVehiculoAdmin(dispositivo) {
         return dispositivo.name || dispositivo.attributes?.plate || dispositivo.attributes?.registration || dispositivo.uniqueId || `Vehículo #${dispositivo.id}`;
@@ -824,9 +862,10 @@ html, body { width: 100%; height: 100%; min-width: 0; min-height: 0; margin: 0; 
                 if (reglasAlertasWebConsultadas) cargarAlertasPersistentesMapa();
             } else {
                 const sesion = obtenerCredencialesPersistentes();
-                const gifGuardado = sesion?.tipoVehiculo || 'https://i.imgur.com/P2j8UEP.gif';
+                const gifGuardado = sesion?.tipoVehiculo || ICONO_EMPRESA_ADMIN;
+                const claseIconoVehiculo = gifGuardado === ICONO_EMPRESA_ADMIN ? 'gps-vehiculo-img icono-empresa' : 'gps-vehiculo-img';
                 const marcaVehiculo = dispositivo.model || sesion?.marca || 'MODO ADMINISTRADOR';
-                document.getElementById('tarjeta-gps').innerHTML = `<div class="gps-tarjeta-cabecera"><img src="${gifGuardado}" class="gps-vehiculo-img" alt="Vehículo"><div class="gps-vehiculo-info"><div class="gps-vehiculo">${escaparHTML(placaSeleccionada)}</div><div class="gps-vehiculo-marca">${escaparHTML(marcaVehiculo)}</div><div class="gps-estado gps-error">● ESPERANDO SEÑAL GPS</div></div></div>`;
+                document.getElementById('tarjeta-gps').innerHTML = `<div class="gps-tarjeta-cabecera"><img src="${gifGuardado}" class="${claseIconoVehiculo}" alt="Vehículo"><div class="gps-vehiculo-info"><div class="gps-vehiculo">${escaparHTML(placaSeleccionada)}</div><div class="gps-vehiculo-marca">${escaparHTML(marcaVehiculo)}</div><div class="gps-estado gps-error">● ESPERANDO SEÑAL GPS</div></div></div>`;
                 mostrarAlertaPersonalizada(`Vehículo ${placaSeleccionada} seleccionado en control, esperando su primer reporte de ubicación GPS.`);
             }
         } catch (error) {
@@ -891,11 +930,12 @@ html, body { width: 100%; height: 100%; min-width: 0; min-height: 0; margin: 0; 
     });
 
     function entrarAlMapa() {
+        actualizarOpcionEmpresaLogin();
         const email = document.getElementById('email').value.trim();
         const password = document.getElementById('password').value;
         const esAdmin = email.toLowerCase() === EMAIL_ADMINISTRADOR;
-        const marca = document.getElementById('marca').value.trim() || (esAdmin ? 'ADMINISTRADOR' : '');
-        const tipoVehiculo = document.getElementById('tipo-vehiculo').value || (esAdmin ? 'https://i.imgur.com/P2j8UEP.gif' : '');
+        const marca = document.getElementById('marca').value.trim() || (esAdmin ? 'EMPRESA' : '');
+        const tipoVehiculo = document.getElementById('tipo-vehiculo').value || (esAdmin ? ICONO_EMPRESA_ADMIN : '');
         if (!email || !password || !marca || !tipoVehiculo) { mostrarAlertaPersonalizada('Por favor, completa todos los campos.'); return; }
 
         guardarCredencialesPersistentes({ email, password, marca, tipoVehiculo });
@@ -1147,7 +1187,8 @@ html, body { width: 100%; height: 100%; min-width: 0; min-height: 0; margin: 0; 
         const sesion = obtenerCredencialesPersistentes();
         const marcaGuardada = sesion?.marca || 'SIN MARCA';
         const gifGuardado = sesion?.tipoVehiculo || 'https://i.imgur.com/v8fX3x1.gif';
-        document.getElementById('tarjeta-gps').innerHTML = `<div class="gps-tarjeta-cabecera"><img src="${gifGuardado}" class="gps-vehiculo-img" alt="Vehículo"><div class="gps-vehiculo-info"><div class="gps-vehiculo">${dispositivo.name || 'SIN PLACA'}</div><div class="gps-vehiculo-marca">${marcaGuardada}</div><div class="gps-estado ${posicion.valid ? 'gps-ok' : 'gps-error'}">● ${posicion.valid ? 'GPS ACTIVO' : 'GPS SIN SEÑAL'}</div></div></div>`;
+        const claseIconoVehiculo = gifGuardado === ICONO_EMPRESA_ADMIN ? 'gps-vehiculo-img icono-empresa' : 'gps-vehiculo-img';
+        document.getElementById('tarjeta-gps').innerHTML = `<div class="gps-tarjeta-cabecera"><img src="${gifGuardado}" class="${claseIconoVehiculo}" alt="Vehículo"><div class="gps-vehiculo-info"><div class="gps-vehiculo">${dispositivo.name || 'SIN PLACA'}</div><div class="gps-vehiculo-marca">${marcaGuardada}</div><div class="gps-estado ${posicion.valid ? 'gps-ok' : 'gps-error'}">● ${posicion.valid ? 'GPS ACTIVO' : 'GPS SIN SEÑAL'}</div></div></div>`;
         const cargaMapa = document.getElementById('map-loading');
         if (cargaMapa) cargaMapa.classList.add('oculto');
         actualizarMarcadorWebGL(posicion);
@@ -1160,11 +1201,13 @@ html, body { width: 100%; height: 100%; min-width: 0; min-height: 0; margin: 0; 
         if (marcador) mapa.setView(marcador.getLatLng(), 18, { animate: true });
     }
     function cerrarSesion() {
+        cerrarModales();
         eliminarCredencialesPersistentes();
         dispositivosAdmin = []; vehiculoAdminSeleccionadoId = null; ultimaSincronizacionAdmin = 0; ultimaLatitud = null; ultimaLongitud = null;
         document.getElementById('pantalla-mapa').style.display = 'none';
         document.getElementById('pantalla-login').style.display = 'flex';
         document.getElementById('email').value = ''; document.getElementById('password').value = ''; document.getElementById('marca').value = ''; document.getElementById('tipo-vehiculo').value = '';
+        actualizarOpcionEmpresaLogin();
         configurarPanelAdmin(false);
         const textoEstado = document.querySelector('#admin-active-status span:first-child');
         if (textoEstado) textoEstado.textContent = 'Escribe una placa para controlar';
@@ -1417,7 +1460,5 @@ html, body { width: 100%; height: 100%; min-width: 0; min-height: 0; margin: 0; 
 
     console.log('EAGLE TRACK GPS CARGADO CORRECTAMENTE');
 </script>
-<div id="root" hidden></div>
-<script type="module" src="/src/main.tsx"></script>
 </body>
 </html>
